@@ -1,0 +1,36 @@
+{
+  "name": "es-opencast-importer-plugin",
+  "version": "0.0.1",
+  "description": "This plugin harvests episodes (lecture recordings) from Opencast instances and push it as external references to an Edu-Sharing instance.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ffeyen/es-opencast-importer-plugin.git"
+  },
+  "keywords": [
+    "Opencast",
+    "Edu-Sharing",
+    "Plugin"
+  ],
+  "author": "Florian Feyen",
+  "license": "ISC",
+  "devDependencies": {
+    "eslint": "^7.7.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "nodemon": "^2.0.4"
+  },
+  "dependencies": {
+    "axios": "^0.20.0",
+    "body-parser": "^1.19.0",
+    "lowdb": "^1.0.0",
+    "nanoid": "^3.1.12",
+    "node-file-logger": "^0.9.5"
+  }
+}

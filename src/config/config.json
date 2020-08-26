@@ -1,0 +1,23 @@
+{
+  "es": {
+    "url": ""
+  },
+  "oc": {
+    "protocol": "https",
+    "domain": "develop.opencast.org",
+    "routes": {
+      "getAllEpisodes": "/search/episode.json"
+    }
+  },
+  "logger": {
+    "folderPath": "./logs/",
+    "dateBasedFileNaming": true,
+    "fileNamePrefix": "es-oc-importer_",
+    "fileNameExtension": ".log",
+    "timeZone": "Europe/Berlin",
+    "dateFormat": "YYYY-MM-DD",
+    "timeFormat": "HH:mm:ss",
+    "logLevel": "debug",
+    "onlyFileLogging": false
+  }
+}
