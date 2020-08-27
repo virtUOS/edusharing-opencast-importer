@@ -4,6 +4,8 @@
   "description": "This plugin harvests episodes (lecture recordings) from Opencast instances and push it as external references to an Edu-Sharing instance.",
   "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon -x 'clear;node' src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

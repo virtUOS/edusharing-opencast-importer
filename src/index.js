@@ -9,7 +9,7 @@ logger.SetUserOptions(CONF.logger)
 
 function main() {
   logger.Info('Application started')
-  opencast.getPublishedEpisodes()
+  opencast.getAllPublishedEpisodes()
 }
 
 main()

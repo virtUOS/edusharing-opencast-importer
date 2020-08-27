@@ -4,9 +4,14 @@
   },
   "oc": {
     "protocol": "https",
-    "domain": "develop.opencast.org",
+    "domain": "video2.virtuos.uni-osnabrueck.de",
+    "domainDev": "develop.opencast.org",
+    "requestLimit": 50,
     "routes": {
       "getAllEpisodes": "/search/episode.json"
+    },
+    "develop": {
+      "useDevDomain": false
     }
   },
   "logger": {
