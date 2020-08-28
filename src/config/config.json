@@ -4,14 +4,14 @@
   },
   "oc": {
     "protocol": "https",
-    "domain": "video2.virtuos.uni-osnabrueck.de",
+    "domain": "video4.virtuos.uni-osnabrueck.de",
     "domainDev": "develop.opencast.org",
-    "requestLimit": 50,
+    "requestLimit": 2,
     "routes": {
       "getAllEpisodes": "/search/episode.json"
     },
     "develop": {
-      "useDevDomain": false
+      "useDevDomain": true
     }
   },
   "logger": {
