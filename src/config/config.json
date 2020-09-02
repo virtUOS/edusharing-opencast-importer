@@ -12,6 +12,10 @@
     },
     "develop": {
       "useDevDomain": true
+    },
+    "filenames": {
+      "episodes": "storage-oc-episodes.json",
+      "series": "storage-oc-series.json"
     }
   },
   "logger": {
