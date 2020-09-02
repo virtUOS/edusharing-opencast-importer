@@ -20,7 +20,7 @@
   "author": "Florian Feyen",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^7.7.0",
+    "eslint": "^7.8.1",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.0",
     "eslint-plugin-node": "^11.1.0",
@@ -31,8 +31,12 @@
   "dependencies": {
     "axios": "^0.20.0",
     "body-parser": "^1.19.0",
-    "lowdb": "^1.0.0",
     "nanoid": "^3.1.12",
     "node-file-logger": "^0.9.5"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "data/*.json"
+    ]
   }
 }
