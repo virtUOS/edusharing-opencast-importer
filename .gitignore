@@ -117,3 +117,6 @@ dist
 
 # log files
 logs/
+
+# data storage files
+data/*.json
