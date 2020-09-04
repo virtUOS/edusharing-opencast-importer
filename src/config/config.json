@@ -6,12 +6,13 @@
     "protocol": "https",
     "domain": "video4.virtuos.uni-osnabrueck.de",
     "domainDev": "develop.opencast.org",
-    "requestLimit": 2,
+    "requestLimit": 100,
     "routes": {
-      "getAllEpisodes": "/search/episode.json"
+      "getAllEpisodes": "/search/episode.json",
+      "getSeriesById": "/search/series.json"
     },
     "develop": {
-      "useDevDomain": true
+      "useDevDomain": false
     },
     "filenames": {
       "episodes": "storage-oc-episodes.json",

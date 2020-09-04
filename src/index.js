@@ -17,10 +17,12 @@ async function main() {
   getAllPublishedEpisodes.start()
     .then(async(episodes) => {
       ocEpisodes = episodes
-      ocSeries = await getSeriesIdsFromEpisodes.start(episodes)
+      storage.storeData(CONF.oc.filenames.episodes, episodes)
+      return await getSeriesIdsFromEpisodes.start(episodes)
     })
-    .then(() => {
-      storage.storeData(CONF.oc.filenames.episodes, ocEpisodes)
+    .then((series) => {
+      ocSeries = series
+      storage.storeData(CONF.oc.filenames.series, series)
       console.log(ocEpisodes.length)
       console.log(ocSeries.length)
     })
