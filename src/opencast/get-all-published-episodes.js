@@ -6,6 +6,7 @@ const CONF = require('../config/config.json')
 async function start() {
   let instanceMetadata = { pageCurrent: 0 }
   const episodes = []
+  const episodesIds = new Set()
 
   const url = getUrlForRequest(
     CONF.oc.protocol,
@@ -15,21 +16,6 @@ async function start() {
 
   function getUrlForRequest(proto, domain, route, limit) {
     return proto + '://' + domain + route + '?sort=DATE_CREATED' + '&limit=' + limit
-  }
-
-  async function sendGetRequest(url, page) {
-    url = url + '&offset=' + page
-    logger.Info('GET: ' + url)
-    return await axios.get(url)
-      .then(response => {
-        logger.Info(response.status + ': get request OK')
-        return response.data['search-results']
-      })
-      .catch(error => logger.Error(error))
-  }
-
-  async function handleResponse(data) {
-    return pushEpisodesToArray(data.result)
   }
 
   function setInstanceMetadata(data) {
@@ -42,26 +28,39 @@ async function start() {
     }
   }
 
+  async function sendGetRequest(url, offset) {
+    url = url + '&offset=' + offset
+    return await axios.get(url)
+      .then(response => {
+        return response.data['search-results']
+      })
+      .catch(error => logger.Error(error))
+  }
+
+  async function handleResponse(data) {
+    return pushEpisodesToArray(data.result)
+  }
+
   async function pushEpisodesToArray(results) {
     for (let i = 0; i < results.length; i++) {
-      episodes.push(results[i])
+      if (!episodesIds.has(results[i].id)) {
+        episodesIds.add(results[i].id)
+        episodes.push(results[i])
+      }
     }
   }
 
   async function returnReqsAsPromiseArray(url) {
-    console.log('-- START SENDING PROMISSES')
     const requests = []
     const pageMax = instanceMetadata.pageMax ? instanceMetadata.pageMax : 1
 
     for (let i = 0; i < pageMax; i++) {
-      console.log(i + '/' + instanceMetadata.pageMax)
-
-      requests.push(await sendGetRequest(url, i)
+      requests.push(await sendGetRequest(url, i * CONF.oc.requestLimit)
         .then(async(data) => {
           if (data.result) {
             return await handleResponse(data)
           } else {
-            logger.Warn('No public episodes ( ' + url + ')')
+            logger.Info('No public episodes ( ' + url + ')')
           }
         })
         .catch((error) => logger.Error(error))
@@ -77,10 +76,11 @@ async function start() {
     })
     .then(async() => {
       console.log(instanceMetadata)
+      logger.Info('[Episodes] Start sending promises: ' + url)
       return returnReqsAsPromiseArray(url)
     })
     .then(() => {
-      console.log('-- ALL PROMISSES RESOLVED')
+      logger.Info('[Episodes] All promissed resolved: ' + url)
       return episodes
     })
     .catch(error => logger.Error(error))

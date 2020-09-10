@@ -31,13 +31,14 @@ async function start(episodes) {
 
     return await axios.get(url)
       .then(response => {
-        logger.Info(response.status + ': get request OK')
         return response.data['search-results']
       })
       .catch(error => logger.Error(error))
   }
 
   async function getSeriesById(url, seriesIds) {
+    logger.Info('[Series] Start sending promises: ' + url)
+
     const requests = []
 
     for (let i = 0; i < seriesIds.length; i++) {
@@ -60,9 +61,9 @@ async function start(episodes) {
 
   return await getSeriesById(url, seriesIds)
     .then((seriesData) => {
+      logger.Info('[Series] All promissed resolved: ' + url)
       return seriesData.filter(value => value !== undefined)
     })
-
     .catch(error => logger.Error(error))
 }
 
