@@ -37,7 +37,7 @@ async function start(episodes) {
   }
 
   async function getSeriesById(url, seriesIds) {
-    logger.Info('[Series] Start sending promises: ' + url)
+    logger.Info('[Series] Start sending GET requests: ' + url)
 
     const requests = []
 

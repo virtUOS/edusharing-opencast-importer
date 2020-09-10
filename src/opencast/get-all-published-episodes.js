@@ -76,7 +76,7 @@ async function start() {
     })
     .then(async() => {
       console.log(instanceMetadata)
-      logger.Info('[Episodes] Start sending promises: ' + url)
+      logger.Info('[Episodes] Start sending GET requests: ' + url)
       return returnReqsAsPromiseArray(url)
     })
     .then(() => {
