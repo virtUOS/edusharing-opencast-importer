@@ -11,7 +11,7 @@ async function start(episodes) {
 
     for (let i = 0; i < episodes.length; i++) {
       const seriesId = episodes[i].dcIsPartOf
-      if ((seriesId) && !seriesIds.includes(seriesId)) seriesIds.push(seriesId)
+      if (seriesId && !seriesIds.includes(seriesId)) seriesIds.push(seriesId)
     }
 
     return seriesIds
@@ -23,17 +23,19 @@ async function start(episodes) {
 
   const url = getUrlForRequest(
     CONF.oc.protocol,
-    (CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain),
-    CONF.oc.routes.getSeriesById)
+    CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain,
+    CONF.oc.routes.getSeriesById
+  )
 
   async function sendGetRequest(url, seriesId) {
     url = url + '&id=' + seriesId
 
-    return await axios.get(url)
-      .then(response => {
+    return await axios
+      .get(url)
+      .then((response) => {
         return response.data['search-results']
       })
-      .catch(error => logger.Error(error))
+      .catch((error) => logger.Error(error))
   }
 
   async function getSeriesById(url, seriesIds) {
@@ -42,15 +44,16 @@ async function start(episodes) {
     const requests = []
 
     for (let i = 0; i < seriesIds.length; i++) {
-      requests.push(await sendGetRequest(url, seriesIds[i])
-        .then(async(data) => {
-          if (data.result) {
-            return data.result
-          } else {
-            logger.Warn('No series found for ID: ' + seriesIds[i])
-          }
-        })
-        .catch(error => logger.Error(error))
+      requests.push(
+        await sendGetRequest(url, seriesIds[i])
+          .then(async(data) => {
+            if (data.result) {
+              return data.result
+            } else {
+              logger.Warn('No series found for ID: ' + seriesIds[i])
+            }
+          })
+          .catch((error) => logger.Error(error))
       )
     }
 
@@ -62,9 +65,9 @@ async function start(episodes) {
   return await getSeriesById(url, seriesIds)
     .then((seriesData) => {
       logger.Info('[Series] All promissed resolved: ' + url)
-      return seriesData.filter(value => value !== undefined)
+      return seriesData.filter((value) => value !== undefined)
     })
-    .catch(error => logger.Error(error))
+    .catch((error) => logger.Error(error))
 }
 
 module.exports.start = start

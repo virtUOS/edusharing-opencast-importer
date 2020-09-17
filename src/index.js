@@ -14,7 +14,8 @@ async function main() {
   let ocEpisodes = []
   let ocSeries = []
 
-  getAllPublishedEpisodes.start()
+  getAllPublishedEpisodes
+    .start()
     .then(async(episodes) => {
       ocEpisodes = episodes
       storage.storeData(CONF.oc.filenames.episodes, episodes)
@@ -26,7 +27,7 @@ async function main() {
       console.log(ocSeries.length)
       storage.storeData(CONF.oc.filenames.series, series)
     })
-    .catch(error => logger.Error(error))
+    .catch((error) => logger.Error(error))
 }
 
 main()

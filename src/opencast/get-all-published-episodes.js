@@ -10,12 +10,15 @@ async function start() {
 
   const url = getUrlForRequest(
     CONF.oc.protocol,
-    (CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain),
+    CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain,
     CONF.oc.routes.getAllEpisodes,
-    CONF.oc.requestLimit)
+    CONF.oc.requestLimit
+  )
 
   function getUrlForRequest(proto, domain, route, limit) {
-    return proto + '://' + domain + route + '?sort=DATE_CREATED' + '&limit=' + limit
+    return (
+      proto + '://' + domain + route + '?sort=DATE_CREATED' + '&limit=' + limit
+    )
   }
 
   function setInstanceMetadata(data) {
@@ -30,11 +33,12 @@ async function start() {
 
   async function sendGetRequest(url, offset) {
     url = url + '&offset=' + offset
-    return await axios.get(url)
-      .then(response => {
+    return await axios
+      .get(url)
+      .then((response) => {
         return response.data['search-results']
       })
-      .catch(error => logger.Error(error))
+      .catch((error) => logger.Error(error))
   }
 
   async function handleResponse(data) {
@@ -55,15 +59,16 @@ async function start() {
     const pageMax = instanceMetadata.pageMax ? instanceMetadata.pageMax : 1
 
     for (let i = 0; i < pageMax; i++) {
-      requests.push(await sendGetRequest(url, i * CONF.oc.requestLimit)
-        .then(async(data) => {
-          if (data.result) {
-            return await handleResponse(data)
-          } else {
-            logger.Info('No public episodes ( ' + url + ')')
-          }
-        })
-        .catch((error) => logger.Error(error))
+      requests.push(
+        await sendGetRequest(url, i * CONF.oc.requestLimit)
+          .then(async(data) => {
+            if (data.result) {
+              return await handleResponse(data)
+            } else {
+              logger.Info('No public episodes ( ' + url + ')')
+            }
+          })
+          .catch((error) => logger.Error(error))
       )
     }
 
@@ -71,7 +76,7 @@ async function start() {
   }
 
   return await sendGetRequest(url, 0) // send first GET request seperated from promise loop for instance metadata
-    .then(data => {
+    .then((data) => {
       if (data.total > 0) setInstanceMetadata(data)
     })
     .then(async() => {
@@ -83,7 +88,7 @@ async function start() {
       logger.Info('[Episodes] All promissed resolved: ' + url)
       return episodes
     })
-    .catch(error => logger.Error(error))
+    .catch((error) => logger.Error(error))
 }
 
 module.exports.start = start
