@@ -6,7 +6,20 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon -x 'clear;node' src/index.js",
+    "lint": "eslint '**/*js'",
+    "lint:fix": "eslint '**/*js' --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "npm run lint:fix",
+      "git add"
+    ]
   },
   "repository": {
     "type": "git",
@@ -27,6 +40,8 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.1",
+    "husky": "^4.3.0",
+    "lint-staged": "^10.4.0",
     "nodemon": "^2.0.4"
   },
   "dependencies": {
