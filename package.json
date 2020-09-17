@@ -18,7 +18,8 @@
   },
   "lint-staged": {
     "*.js": [
-      "npm run lint:fix && npm run format"
+      "npm run lint:fix",
+      "npm run format"
     ]
   },
   "repository": {
