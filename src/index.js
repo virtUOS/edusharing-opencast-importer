@@ -6,6 +6,7 @@ const CONF = require('./config/config.json')
 const storage = require('./services/data-storage.js')
 const getAllPublishedEpisodes = require('./opencast/get-all-published-episodes.js')
 const getSeriesIdsFromEpisodes = require('./opencast/get-series-from-episodes.js')
+const sorter = require('./services/sorter.js')
 
 async function main() {
   logger.SetUserOptions(CONF.logger)
@@ -26,6 +27,10 @@ async function main() {
       console.log(ocEpisodes.length)
       console.log(ocSeries.length)
       storage.storeData(CONF.oc.filenames.series, series)
+      return series
+    })
+    .then((series) => {
+      sorter.getSortedEpisodesPerSeriesIds(series, ocEpisodes)
     })
     .catch((error) => logger.Error(error))
 }
