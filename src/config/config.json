@@ -12,11 +12,12 @@
       "getSeriesById": "/search/series.json"
     },
     "develop": {
-      "useDevDomain": false
+      "useDevDomain": true
     },
     "filenames": {
       "episodes": "storage-oc-episodes.json",
-      "series": "storage-oc-series.json"
+      "series": "storage-oc-series.json",
+      "sortedEpisodes": "storage-oc-sortedEpisodes.json"
     }
   },
   "logger": {

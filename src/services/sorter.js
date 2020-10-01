@@ -1,12 +1,15 @@
 'use strict'
-const logger = require('node-file-logger')
-const CONF = require('../config/config.json')
+const filter = require('./filter-episodes.js')
 
 function getSortedEpisodesPerSeriesIds(series, episodes) {
   const uniqueSeriesIds = getUniqueSeriesIds(series)
   const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
-  const sortedEpisodesPerSeriesId = sortEpisodesIdPerSeriesId(seriesIdsObjects, episodes)
-  console.log(sortedEpisodesPerSeriesId)
+  const filteredEpisodes = filter.filterForOpenLicensedEpisodes(episodes)
+  const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(
+    seriesIdsObjects,
+    filteredEpisodes
+  )
+  return sortedEpisodesPerSeries
 }
 
 function getUniqueSeriesIds(series) {
@@ -15,24 +18,32 @@ function getUniqueSeriesIds(series) {
     seriesIds.push(series[i].id)
   }
   return [...new Set(seriesIds)]
-  // return seriesIds.filter((x, i, a) => a.indexOf(x) === i)
 }
 
 function createObjectsFromSeriesIds(uniqueSeriesIds) {
-  return uniqueSeriesIds.map(seriesId => {
-    return { seriesId: seriesId }
+  return uniqueSeriesIds.map((seriesId) => {
+    return {
+      id: seriesId,
+      episodes: []
+    }
   })
 }
 
-function sortEpisodesIdPerSeriesId(seriesIdsObjects, episodes) {
+function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
   const sortedEpisodes = seriesIdsObjects
-  episodes.forEach(episode => {
+  episodes.forEach((episode) => {
     if (episode.dcIsPartOf) {
-      console.log(episode.dcIsPartOf)
-      const seriesIndex = sortedEpisodes.indexOf(episode.dcIsPartOf)
-      console.log(seriesIndex)
+      const episodeSeriesId = episode.dcIsPartOf
+      const seriesIndex = sortedEpisodes.findIndex(
+        (series) => series.id === episodeSeriesId
+      )
+      if (seriesIndex > 0) {
+        sortedEpisodes[seriesIndex].episodes.push({ id: episode.id })
+      }
     }
   })
+
+  return sortedEpisodes
 }
 
 module.exports = {
