@@ -13,11 +13,17 @@ const localPath = path.resolve(__dirname) + '/../../data/'
 
 async function loadData(filename) {
   const filepath = localPath + filename
-  return new Promise((resolve, reject) => {
+  /*   return new Promise((resolve, reject) => {
     fs.readFile(filepath, 'utf8', (error, data) => {
       error ? reject(logger.Error(error)) : resolve(JSON.parse(data))
     })
-  })
+  }) */
+  try {
+    const data = await fs.readFile(filepath, { encoding: 'utf8' })
+    return JSON.parse(data)
+  } catch (error) {
+    console.log(error)
+  }
 }
 
 async function storeData(filename, data) {
