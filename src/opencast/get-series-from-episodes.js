@@ -3,7 +3,9 @@ const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.json')
 
-async function start(episodes) {
+async function start(episodes, ocSeries, force) {
+  if (ocSeries.length > 0 || !force) return ocSeries
+
   logger.Info('Start getting series ids from episodes')
 
   function extractSeriesIdsFromEpisodes(episodes) {
@@ -50,7 +52,7 @@ async function start(episodes) {
             if (data.result) {
               return data.result
             } else {
-              logger.Warn('No series found for ID: ' + seriesIds[i])
+              // logger.Warn('No series found for ID: ' + seriesIds[i])
             }
           })
           .catch((error) => logger.Error(error))
