@@ -4,7 +4,7 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.json')
 
 async function start(ocEpisodes, force) {
-  if (ocEpisodes.length > 0 || !force) return ocEpisodes
+  if (ocEpisodes.length > 0 && !force) return ocEpisodes
 
   let instanceMetadata = { pageCurrent: 0 }
   const episodes = []
