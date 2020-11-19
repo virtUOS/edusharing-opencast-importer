@@ -6,7 +6,7 @@
     "protocol": "https",
     "domain": "video4.virtuos.uni-osnabrueck.de",
     "domainDev": "develop.opencast.org",
-    "requestLimit": 100,
+    "requestLimit": 50,
     "routes": {
       "getAllEpisodes": "/search/episode.json",
       "getSeriesById": "/search/series.json"
@@ -30,5 +30,8 @@
     "timeFormat": "HH:mm:ss",
     "logLevel": "debug",
     "onlyFileLogging": false
+  },
+  "filter": {
+    "allowedLicences": ["CC0", "CC-BY", "CC-BY-SA", "PD"]
   }
 }

@@ -1,14 +1,9 @@
 'use strict'
-const filter = require('./filter-episodes.js')
 
-function getSortedEpisodesPerSeriesIds(series, episodes) {
+function getSortedEpisodesPerSeriesIds(series, filteredEpisodes) {
   const uniqueSeriesIds = getUniqueSeriesIds(series)
   const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
-  const filteredEpisodes = filter.filterForOpenLicensedEpisodes(episodes)
-  const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(
-    seriesIdsObjects,
-    filteredEpisodes
-  )
+  const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(seriesIdsObjects, filteredEpisodes)
   return sortedEpisodesPerSeries
 }
 
@@ -34,9 +29,7 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
   episodes.forEach((episode) => {
     if (episode.dcIsPartOf) {
       const episodeSeriesId = episode.dcIsPartOf
-      const seriesIndex = sortedEpisodes.findIndex(
-        (series) => series.id === episodeSeriesId
-      )
+      const seriesIndex = sortedEpisodes.findIndex((series) => series.id === episodeSeriesId)
       if (seriesIndex > 0) {
         sortedEpisodes[seriesIndex].episodes.push({ id: episode.id })
       }
