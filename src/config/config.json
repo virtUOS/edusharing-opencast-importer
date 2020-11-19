@@ -15,9 +15,12 @@
       "useDevDomain": true
     },
     "filenames": {
-      "episodes": "storage-oc-episodes.json",
-      "series": "storage-oc-series.json",
-      "sortedEpisodes": "storage-oc-sortedEpisodes.json"
+      "episodes": "ocEpisodes.json",
+      "series": "ocSeries.json",
+      "sortedEpisodes": "sortedEpisodes.json",
+      "sortedEpisodeIdsPerSeries": "sortedEpisodeIdsPerSeries.json",
+      "episodesData": "episodesData.json",
+      "seriesData": "seriesData.json"
     }
   },
   "logger": {
