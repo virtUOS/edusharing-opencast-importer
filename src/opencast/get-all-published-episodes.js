@@ -18,9 +18,7 @@ async function start(ocEpisodes, force) {
   )
 
   function getUrlForRequest(proto, domain, route, limit) {
-    return (
-      proto + '://' + domain + route + '?sort=DATE_CREATED' + '&limit=' + limit
-    )
+    return proto + '://' + domain + route + '?sort=DATE_CREATED' + '&limit=' + limit
   }
 
   function setInstanceMetadata(data) {

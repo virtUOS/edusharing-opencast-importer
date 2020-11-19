@@ -29,14 +29,9 @@ async function loadData(filename) {
 async function storeData(filename, data) {
   const filepath = localPath + filename
   return new Promise((resolve, reject) => {
-    fs.writeFile(
-      filepath,
-      JSON.stringify(data),
-      writeOptions,
-      (error, data) => {
-        error ? reject(logger.Error(error)) : resolve(data)
-      }
-    )
+    fs.writeFile(filepath, JSON.stringify(data), writeOptions, (error, data) => {
+      error ? reject(logger.Error(error)) : resolve(data)
+    })
   })
 }
 
