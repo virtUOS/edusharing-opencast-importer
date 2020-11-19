@@ -51,8 +51,6 @@ async function start(episodes, ocSeries, force) {
           .then(async(data) => {
             if (data.result) {
               return data.result
-            } else {
-              // logger.Warn('No series found for ID: ' + seriesIds[i])
             }
           })
           .catch((error) => logger.Error(error))
