@@ -13,7 +13,7 @@
     "ecmaVersion": 2018
   },
   "rules": {
-    "max-len": ["error", { "code": 100 ,  "tabWidth": 2 }],
+    "max-len": ["error", { "code": 100 ,  "tabWidth": 2, "ignoreComments": true }],
     "space-before-function-paren": ["error", "never"]
   }
 }
