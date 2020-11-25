@@ -3,8 +3,11 @@ const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.json')
 
-async function start(ocEpisodes, force) {
-  if (ocEpisodes.length > 0 && !force) return ocEpisodes
+async function start(ocEpisodes, force, ocInstance) {
+  if (ocEpisodes || force) {
+    if (force) logger.Info('[Episodes] Force episodes GET reqeusts for ' + ocInstance)
+    if (ocEpisodes.length > 0) return ocEpisodes
+  }
 
   let instanceMetadata = { pageCurrent: 0 }
   const episodes = []
@@ -81,11 +84,11 @@ async function start(ocEpisodes, force) {
     })
     .then(async() => {
       console.log(instanceMetadata)
-      logger.Info('[Episodes] Start sending GET requests: ' + url)
+      logger.Info('[Episodes] Start sending GET requests: ' + ocInstance)
       return returnReqsAsPromiseArray(url)
     })
     .then(() => {
-      logger.Info('[Episodes] All promissed resolved: ' + url)
+      logger.Info('[Episodes] All promissed resolved: ' + ocInstance)
       return episodes
     })
     .catch((error) => logger.Error(error))
