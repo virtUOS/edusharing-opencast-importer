@@ -32,12 +32,12 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
       const episodeSeriesId = episode.dcIsPartOf
       const seriesIndex = sortedEpisodes.findIndex((series) => series.id === episodeSeriesId)
       if (seriesIndex > 0) {
-        sortedEpisodes[seriesIndex].episodes.push({ id: episode.id })
+        sortedEpisodes[seriesIndex].episodes.push(episode.id.toString())
       }
     }
   })
 
-  return sortedEpisodes
+  return sortedEpisodes.filter((series) => series.episodes.length > 0)
 }
 
 function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance) {
@@ -49,10 +49,13 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance) {
       if (currentOcSeries.dcDescription) series.description = currentOcSeries.dcDescription
       if (currentOcSeries.dcPublisher) series.publisher = currentOcSeries.dcPublisher
       if (currentOcSeries.dcCreated) series.created = currentOcSeries.dcCreated
+      if (currentOcSeries.dcContributor) series.contributor = currentOcSeries.dcContributor
+      if (currentOcSeries.dcLanguage) series.language = currentOcSeries.dcLanguage
       if (currentOcSeries.keywords.length > 0) series.keywords = currentOcSeries.keywords
       if (currentOcSeries.mediaType) series.mediaType = currentOcSeries.mediaType
       if (currentOcSeries.modified) series.modified = currentOcSeries.modified
       series.from = ocInstance
+      series.lastUpdated = new Date()
 
       return series
     }
@@ -103,6 +106,7 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance) {
       }
       if (currentOcEpisode.modified) episode.modified = currentOcEpisode.modified
       episode.from = ocInstance
+      episode.lastUpdated = new Date()
 
       return episode
     }
