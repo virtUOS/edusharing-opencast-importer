@@ -6,7 +6,10 @@ const CONF = require('../config/config.json')
 async function start(ocEpisodes, force, ocInstance) {
   if (ocEpisodes || force) {
     if (force) logger.Info('[Episodes] Force episodes GET requests for ' + ocInstance)
-    if (ocEpisodes.length > 0) return ocEpisodes
+    if (ocEpisodes.length > 0) {
+      logger.Info('[Episodes] ' + ocEpisodes.length + ' Episodes found for ' + ocInstance)
+      return ocEpisodes
+    }
   }
 
   let instanceMetadata = { pageCurrent: 0 }
@@ -83,7 +86,6 @@ async function start(ocEpisodes, force, ocInstance) {
       if (data.total > 0) setInstanceMetadata(data)
     })
     .then(async() => {
-      console.log(instanceMetadata)
       logger.Info('[Episodes] Start sending GET requests: ' + ocInstance)
       return returnReqsAsPromiseArray(url)
     })

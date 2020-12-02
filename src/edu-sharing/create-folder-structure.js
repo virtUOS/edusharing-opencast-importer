@@ -16,13 +16,13 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     .then((res) => {
       if (!res) throw Error(res)
       if (res.status === 200) {
+        logger.Info('[ES-API] Created main folder for ' + ocInstance)
         return addNodeIdToSeriesData(res.data.node, seriesData)
       } else {
-        if (res.status === 409) logger.Info('[ES-API] 409 Folder ' + ocInstance + ' exists')
         return seriesData
       }
     })
-    .catch((error) => console.log(error))
+    .catch((error) => logger.Error(error))
 }
 
 function getUrlCreateFolder() {
@@ -74,7 +74,7 @@ async function sendPostRequest(url, body, headers) {
   return await axios
     .post(url, body, headers)
     .then((response) => {
-      console.log(response)
+      logger.Error(response)
       if (response.status === 200) {
         return response
       }

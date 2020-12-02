@@ -33,8 +33,6 @@ async function loadData(filename, ocInstance) {
       // TODO
     }
   } catch (error) {
-    console.log('bla ' + filename)
-    console.log(error)
     error.code === 'ENOENT'
       ? logger.Info('[Storage] No saved data found (' + filename + ')')
       : logger.Error(error)
