@@ -34,7 +34,7 @@
   "author": "Florian Feyen",
   "license": "GPLv3",
   "devDependencies": {
-    "dotenv": "^8.2.0",
+    "axios-debug-log": "^0.8.2",
     "eslint": "^7.14.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.1",
@@ -50,7 +50,8 @@
   "dependencies": {
     "axios": "^0.20.0",
     "body-parser": "^1.19.0",
-    "nanoid": "^3.1.18",
+    "dotenv": "^8.2.0",
+    "nanoid": "^3.1.20",
     "node-file-logger": "^0.9.5"
   },
   "nodemonConfig": {
