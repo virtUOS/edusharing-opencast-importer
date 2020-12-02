@@ -1,7 +1,6 @@
 'use strict'
 
-const fs = require('fs/promises')
-const fss = require('fs')
+const fs = require('fs')
 const logger = require('node-file-logger')
 const path = require('path')
 
@@ -13,8 +12,8 @@ const writeOptions = {
 const localPath = path.resolve(__dirname) + '/../../data/'
 
 function createFolder(dir) {
-  if (!fss.existsSync(dir)) {
-    fss.mkdirSync(dir)
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir)
   }
 }
 
@@ -27,9 +26,15 @@ async function loadData(filename, ocInstance) {
     })
   }) */
   try {
-    const data = await fs.readFile(filepath, { encoding: 'utf8' })
-    return JSON.parse(data)
+    const data = await fs.readFileSync(filepath, { encoding: 'utf8' })
+    try {
+      return JSON.parse(data)
+    } catch (error) {
+      // TODO
+    }
   } catch (error) {
+    console.log('bla ' + filename)
+    console.log(error)
     error.code === 'ENOENT'
       ? logger.Info('[Storage] No saved data found (' + filename + ')')
       : logger.Error(error)
@@ -39,7 +44,7 @@ async function loadData(filename, ocInstance) {
 async function storeData(filename, data, ocInstance) {
   const filepath = localPath + ocInstance + '/' + filename
   return new Promise((resolve, reject) => {
-    fs.writeFile(filepath, JSON.stringify(data), writeOptions, (error, data) => {
+    fs.writeFileSync(filepath, JSON.stringify(data, null, 2), writeOptions, (error, data) => {
       error ? reject(logger.Error(error)) : resolve(data)
     })
   })
