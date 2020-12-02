@@ -5,7 +5,7 @@ const CONF = require('../config/config.json')
 
 async function start(ocEpisodes, force, ocInstance) {
   if (ocEpisodes || force) {
-    if (force) logger.Info('[Episodes] Force episodes GET reqeusts for ' + ocInstance)
+    if (force) logger.Info('[Episodes] Force episodes GET requests for ' + ocInstance)
     if (ocEpisodes.length > 0) return ocEpisodes
   }
 

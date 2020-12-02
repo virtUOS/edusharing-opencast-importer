@@ -1,11 +1,15 @@
 'use strict'
 
-function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance) {
-  const uniqueSeriesIds = getUniqueSeriesIds(series)
-  const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
-  const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(seriesIdsObjects, filteredEpisodes)
-  const sortedSeriesData = applySeriesData(sortedEpisodesPerSeries, series, ocInstance)
-  return sortedSeriesData
+function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, seriesData) {
+  if (!seriesData) {
+    const uniqueSeriesIds = getUniqueSeriesIds(series)
+    const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
+    const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(seriesIdsObjects, filteredEpisodes)
+    const sortedSeriesData = applySeriesData(sortedEpisodesPerSeries, series, ocInstance)
+    return updateMetadata(sortedSeriesData)
+  } else {
+    return updateMetadata(seriesData)
+  }
 }
 
 function getUniqueSeriesIds(series) {
@@ -60,6 +64,18 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance) {
       return series
     }
   })
+}
+
+function updateMetadata(sortedSeriesData) {
+  if (!sortedSeriesData[0].metadata) {
+    const metadata = { metadata: {} }
+    if (!metadata.metadata.firstCrawled) metadata.metadata.firstCrawled = new Date()
+    sortedSeriesData.unshift(metadata)
+  }
+
+  sortedSeriesData[0].metadata.lastUpdated = new Date()
+
+  return sortedSeriesData
 }
 
 function getUniqueEpisodesObjects(filteredEpisodes) {

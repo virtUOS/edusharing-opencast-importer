@@ -1,6 +1,12 @@
 {
   "es": {
-    "url": ""
+    "protocol": "http",
+    "domain": "localhost",
+    "routes": {
+      "api": "/edu-sharing/rest/node/v1/nodes",
+      "oauth": "/edu-sharing/oauth2/token",
+      "createFolder": "/-home-/-userhome-/children"
+    }
   },
   "oc": {
     "protocol": "https",
@@ -17,8 +23,6 @@
     "filenames": {
       "episodes": "ocEpisodes.json",
       "series": "ocSeries.json",
-      "sortedEpisodes": "sortedEpisodes.json",
-      "sortedEpisodeIdsPerSeries": "sortedEpisodeIdsPerSeries.json",
       "episodesData": "episodesData.json",
       "seriesData": "seriesData.json"
     }
