@@ -5,7 +5,7 @@
     "routes": {
       "api": "/edu-sharing/rest/node/v1/nodes",
       "oauth": "/edu-sharing/oauth2/token",
-      "createFolder": "/-home-/-userhome-/children"
+      "baseFolder": "/-home-"
     }
   },
   "oc": {

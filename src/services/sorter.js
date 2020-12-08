@@ -1,7 +1,7 @@
 'use strict'
 
 function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, seriesData) {
-  if (!seriesData) {
+  if (!seriesData || seriesData.length <= series.length) {
     const uniqueSeriesIds = getUniqueSeriesIds(series)
     const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
     const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(seriesIdsObjects, filteredEpisodes)
@@ -35,7 +35,8 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
     if (episode.dcIsPartOf) {
       const episodeSeriesId = episode.dcIsPartOf
       const seriesIndex = sortedEpisodes.findIndex((series) => series.id === episodeSeriesId)
-      if (seriesIndex > 0) {
+
+      if (seriesIndex >= 0) {
         sortedEpisodes[seriesIndex].episodes.push(episode.id.toString())
       }
     }

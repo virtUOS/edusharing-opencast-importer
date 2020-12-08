@@ -29,16 +29,21 @@ async function main() {
     seriesData = await storage.loadData(CONF.oc.filenames.seriesData, ocInstance)
   }
 
+  async function storeData() {
+    storage.storeData(CONF.oc.filenames.episodes, ocEpisodes, ocInstance)
+    storage.storeData(CONF.oc.filenames.series, ocSeries, ocInstance)
+    storage.storeData(CONF.oc.filenames.episodesData, episodesData, ocInstance)
+    storage.storeData(CONF.oc.filenames.seriesData, seriesData, ocInstance)
+  }
+
   initStoredData().then(() => {
     getAllPublishedEpisodes
       .start(ocEpisodes, forceUpdate, ocInstance)
       .then(async(episodes) => {
         ocEpisodes = filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
-        storage.storeData(CONF.oc.filenames.episodes, episodes, ocInstance)
         return await getSeriesIdsFromEpisodes.start(ocEpisodes, ocSeries, forceUpdate, ocInstance)
       })
       .then(async(series) => {
-        storage.storeData(CONF.oc.filenames.series, series, ocInstance)
         seriesData = sorter.getSortedEpisodesPerSeriesIds(
           ocSeries,
           ocEpisodes,
@@ -50,12 +55,11 @@ async function main() {
           ocEpisodes,
           ocInstance
         )
-        storage.storeData(CONF.oc.filenames.episodesData, episodesData, ocInstance)
-        seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData)
-        return seriesData
+        return await esFolders.createFolderForOcInstances(ocInstance, seriesData)
       })
-      .then(async(seriesData) => {
-        storage.storeData(CONF.oc.filenames.seriesData, seriesData, ocInstance)
+      .then((seriesDataWithMetadata) => {
+        seriesData = seriesDataWithMetadata
+        storeData()
       })
       .catch((error) => logger.Error(error))
   })
