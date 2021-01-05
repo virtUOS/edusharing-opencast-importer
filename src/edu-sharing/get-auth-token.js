@@ -69,6 +69,7 @@ function handlePostRequestOauth(res, authObj) {
   if (res.data.access_token) authObj.token_access = res.data.access_token
   if (res.data.refresh_token) authObj.token_refresh = res.data.refresh_token
   if (res.data.expires_in) authObj.token_expires_in = res.data.expires_in
+  authObj.token_created = new Date()
 
   return authObj
 }
