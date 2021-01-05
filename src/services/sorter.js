@@ -5,7 +5,12 @@ function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, ser
     const uniqueSeriesIds = getUniqueSeriesIds(series)
     const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
     const sortedEpisodesPerSeries = sortEpisodesPerSeriesId(seriesIdsObjects, filteredEpisodes)
-    const sortedSeriesData = applySeriesData(sortedEpisodesPerSeries, series, ocInstance)
+    const sortedSeriesData = applySeriesData(
+      sortedEpisodesPerSeries,
+      series,
+      ocInstance,
+      seriesData
+    )
     return updateMetadata(sortedSeriesData)
   } else {
     return updateMetadata(seriesData)
@@ -45,8 +50,9 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
   return sortedEpisodes.filter((series) => series.episodes.length > 0)
 }
 
-function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance) {
+function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesData) {
   return sortedEpisodesPerSeries.map((series) => {
+    const existingSeries = getExistingSeries(seriesData, series.id)
     const currentOcSeries = ocSeries[ocSeries.findIndex((ocSeries) => ocSeries.id === series.id)]
 
     if (currentOcSeries) {
@@ -61,10 +67,18 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance) {
       if (currentOcSeries.modified) series.modified = currentOcSeries.modified
       series.from = ocInstance
       series.lastUpdated = new Date()
+      if (existingSeries) {
+        if (existingSeries.nodeId) series.nodeId = existingSeries.nodeId
+        if (existingSeries.parentId) series.parentId = existingSeries.parentId
+      }
 
       return series
     }
   })
+
+  function getExistingSeries(seriesData, seriesId) {
+    if (seriesData) return seriesData.find((seriesData) => seriesData.id === seriesId)
+  }
 }
 
 function updateMetadata(sortedSeriesData) {
@@ -101,8 +115,9 @@ function createObjectsFromEpisodeIds(uniqueEpisodeIds) {
   })
 }
 
-function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance) {
+function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) {
   return sortedEpisodes.map((episode) => {
+    const existingEpisode = getExistingEpisode(episodesData, episode.id)
     const currentOcEpisode =
       ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
 
@@ -116,18 +131,26 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance) {
       if (currentOcEpisode.dcIsPartOf) episode.isPartOf = currentOcEpisode.dcIsPartOf
       if (currentOcEpisode.mediaType) episode.mediaType = currentOcEpisode.mediaType
       if (currentOcEpisode.keywords.length > 0) episode.keywords = currentOcEpisode.keywords
-      if (currentOcEpisode.mediapackage.media.track.url) {
-        episode.url = currentOcEpisode.mediapackage.media.track.url
-      } else if (currentOcEpisode.mediapackage.media.track[0].url) {
-        episode.url = currentOcEpisode.mediapackage.media.track[0].url
-      }
+      episode.url = createEpisodeUrl(ocInstance, episode.id)
       if (currentOcEpisode.modified) episode.modified = currentOcEpisode.modified
       episode.from = ocInstance
       episode.lastUpdated = new Date()
+      if (existingEpisode) {
+        if (existingEpisode.nodeId) episode.nodeId = existingEpisode.nodeId
+        if (existingEpisode.parentId) episode.parentId = existingEpisode.parentId
+      }
 
       return episode
     }
   })
+
+  function getExistingEpisode(episodesData, episodeId) {
+    if (episodesData) return episodesData.find((episodesData) => episodesData.id === episodeId)
+  }
+
+  function createEpisodeUrl(ocInstance, episodeId) {
+    return `https://${ocInstance}/play/${episodeId}`
+  }
 }
 
 module.exports = {
