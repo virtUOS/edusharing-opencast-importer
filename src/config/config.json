@@ -6,13 +6,15 @@
       "api": "/edu-sharing/rest/node/v1/nodes",
       "oauth": "/edu-sharing/oauth2/token",
       "baseFolder": "/-home-"
-    }
+    },
+    "maxPendingPromises": 1
   },
   "oc": {
     "protocol": "https",
     "domain": "video4.virtuos.uni-osnabrueck.de",
     "domainDev": "develop.opencast.org",
-    "requestLimit": 50,
+    "maxPendingPromises": 2,
+    "requestOffset": 5,
     "routes": {
       "getAllEpisodes": "/search/episode.json",
       "getSeriesById": "/search/series.json"
