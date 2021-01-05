@@ -3,25 +3,37 @@
 const logger = require('node-file-logger')
 const CONF = require('../config/config.json')
 const axios = require('axios').default
-const auth = require('./get-auth-token')
+const pLimit = require('p-limit')
 
-async function createFolderForOcInstances(ocInstance, seriesData) {
-  const authObj = await auth.getEsAuth()
+async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
+  logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
+
   const modifiedSeriesData = seriesData
   const headers = getHeadersCreateFolder(authObj)
   const requests = []
 
   return await createMainFolder()
-    .then(async(res) => {
+    .then(async (res) => {
+      const limit = pLimit(CONF.es.maxPendingPromises)
+
       for (let i = 1; i < modifiedSeriesData.length; i++) {
+        if (modifiedSeriesData[i].nodeId) continue
         if (modifiedSeriesData[0].metadata.nodeId) {
           requests.push(
-            sendPostRequest(
-              getUrlCreateFolder(modifiedSeriesData[0].metadata.nodeId),
-              getBodyCreateFolder(modifiedSeriesData[i].title.replace(/ /g, '-').toLowerCase()),
-              headers,
-              ocInstance,
-              i
+            limit(() =>
+              sendPostRequest(
+                getUrlCreateFolder(modifiedSeriesData[0].metadata.nodeId),
+                getBodyCreateFolder(
+                  modifiedSeriesData[i].title
+                    .replace(/ /g, '-')
+                    .replace(/\(|\)/g, '')
+                    .toLowerCase()
+                    .substring(0, 50)
+                ),
+                headers,
+                ocInstance,
+                i
+              )
             )
           )
         }
@@ -29,6 +41,11 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     })
     .then((res) => {
       return Promise.all(requests).then((res) => {
+        if (res.code === 'ECONNREFUSED') {
+          logger.Error(
+            '[ES API] ' + CONF.es.protocol + '://' + CONF.es.domain + ' is not reachable - skipping'
+          )
+        }
         return modifiedSeriesData
       })
     })
@@ -55,10 +72,7 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
       })
       .catch((error) => {
         if (error.code === 'ECONNREFUSED') {
-          logger.Error(
-            '[ES API] ' + CONF.es.protocol + '://' + CONF.es.domain + ' is not reachable - skipping'
-          )
-          return true
+          return error.code
         }
         if (error.response.status === 409) return true
         logger.Error('[ES API] ' + error)
@@ -84,6 +98,7 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
   function addNodeIdToSeries(response, index) {
     modifiedSeriesData[index].nodeId = response.ref.id
     modifiedSeriesData[index].parentId = response.parent.id
+    modifiedSeriesData[index].lastUpdated = new Date()
   }
 }
 
@@ -120,7 +135,6 @@ function getBodyCreateFolder(folderName) {
 function getHeadersCreateFolder(authObj) {
   return {
     headers: {
-      Host: 'localhost',
       Accept: 'application/json',
       'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
       'Accept-Encoding': 'gzip, deflate',
