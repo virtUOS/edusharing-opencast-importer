@@ -4,12 +4,14 @@ require('axios-debug-log')
 const logger = require('node-file-logger')
 const CONF = require('./config/config.json')
 
-const storage = require('./services/data-storage.js')
-const getAllPublishedEpisodes = require('./opencast/get-all-published-episodes.js')
-const getSeriesIdsFromEpisodes = require('./opencast/get-series-from-episodes.js')
-const sorter = require('./services/sorter.js')
+const storage = require('./services/data-storage')
+const getAllPublishedEpisodes = require('./opencast/get-all-published-episodes')
+const getSeriesIdsFromEpisodes = require('./opencast/get-series-from-episodes')
+const sorter = require('./services/sorter')
 const filter = require('./services/filter-episodes')
-const esFolders = require('./edu-sharing/create-folder-structure.js')
+const esAuth = require('./edu-sharing/get-auth-token')
+const esFolders = require('./edu-sharing/create-folder-structure')
+const esChildren = require('./edu-sharing/create-children')
 
 async function main() {
   logger.SetUserOptions(CONF.logger)
@@ -20,6 +22,7 @@ async function main() {
   let seriesData
   let episodesData
   const ocInstance = CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain
+  const authObj = await esAuth.getEsAuth()
   const forceUpdate = false
 
   async function initStoredData() {
@@ -39,11 +42,12 @@ async function main() {
   initStoredData().then(() => {
     getAllPublishedEpisodes
       .start(ocEpisodes, forceUpdate, ocInstance)
-      .then(async(episodes) => {
+      .then(async (episodes) => {
         ocEpisodes = filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
         return await getSeriesIdsFromEpisodes.start(ocEpisodes, ocSeries, forceUpdate, ocInstance)
       })
-      .then(async(series) => {
+      .then(async (series) => {
+        ocSeries = series
         seriesData = sorter.getSortedEpisodesPerSeriesIds(
           ocSeries,
           ocEpisodes,
@@ -53,14 +57,21 @@ async function main() {
         episodesData = sorter.applyEpisodeData(
           sorter.getUniqueEpisodesObjects(ocEpisodes, seriesData),
           ocEpisodes,
-          ocInstance
+          ocInstance,
+          episodesData
         )
-        return await esFolders.createFolderForOcInstances(ocInstance, seriesData)
+        storeData()
+        return await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
       })
       .then((seriesDataWithMetadata) => {
         seriesData = seriesDataWithMetadata
         storeData()
+        return esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
       })
+      .then((res) => {
+        console.log('end')
+      })
+      .then(() => storeData())
       .catch((error) => logger.Error(error))
   })
 }
