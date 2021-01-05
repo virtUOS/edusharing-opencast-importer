@@ -22,7 +22,7 @@ async function main() {
   let seriesData
   let episodesData
   const ocInstance = CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain
-  const authObj = await esAuth.getEsAuth()
+  let authObj
   const forceUpdate = false
 
   async function initStoredData() {
@@ -61,12 +61,16 @@ async function main() {
           episodesData
         )
         storeData()
+        return await esAuth.getEsAuth()
+      })
+      .then(async (auth) => {
+        authObj = auth
         return await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
       })
-      .then((seriesDataWithMetadata) => {
+      .then(async (seriesDataWithMetadata) => {
         seriesData = seriesDataWithMetadata
         storeData()
-        return esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
+        return await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
       })
       .then((res) => {
         console.log('end')
