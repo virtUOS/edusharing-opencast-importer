@@ -2,10 +2,11 @@
 const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.json')
+const pLimit = require('p-limit')
 
 async function start(episodes, ocSeries, force, ocInstance) {
-  if (ocSeries || force) {
-    if (force) logger.Info('[Series] Force series GET requests for ' + ocInstance)
+  if (force) logger.Info('[Series] Force series GET requests for ' + ocInstance)
+  if (ocSeries && !force) {
     if (ocSeries.length > 0) {
       logger.Info('[Series] ' + ocSeries.length + ' Series found for ' + ocInstance)
       return ocSeries
@@ -49,17 +50,20 @@ async function start(episodes, ocSeries, force, ocInstance) {
   async function getSeriesById(url, seriesIds) {
     logger.Info('[Series] Start sending GET requests: ' + ocInstance)
 
+    const limit = pLimit(CONF.oc.maxPendingPromises)
     const requests = []
 
     for (let i = 0; i < seriesIds.length; i++) {
       requests.push(
-        await sendGetRequest(url, seriesIds[i])
-          .then(async(data) => {
-            if (data.result) {
-              return data.result
-            }
-          })
-          .catch((error) => logger.Error(error))
+        limit(() =>
+          sendGetRequest(url, seriesIds[i])
+            .then(async (data) => {
+              if (data.result) {
+                return data.result
+              }
+            })
+            .catch((error) => logger.Error(error))
+        )
       )
     }
 
