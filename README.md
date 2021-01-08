@@ -25,7 +25,7 @@ npm install
 
 ## Usage
 
-Setup config file `./src/config/config.json`
+Setup config file `./src/config/config.js`
 
 ```sh
 npm run start

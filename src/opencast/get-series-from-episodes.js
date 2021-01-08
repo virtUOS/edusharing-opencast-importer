@@ -1,7 +1,7 @@
 'use strict'
 const axios = require('axios').default
 const logger = require('node-file-logger')
-const CONF = require('../config/config.json')
+const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 
 async function start(episodes, ocSeries, force, ocInstance) {

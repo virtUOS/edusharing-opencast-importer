@@ -2,7 +2,7 @@
 require('dotenv').config()
 require('axios-debug-log')
 const logger = require('node-file-logger')
-const CONF = require('./config/config.json')
+const CONF = require('./config/config.js')
 
 const storage = require('./services/data-storage')
 const getAllPublishedEpisodes = require('./opencast/get-all-published-episodes')
@@ -23,7 +23,7 @@ async function main() {
   let episodesData
   const ocInstance = CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain
   let authObj
-  const forceUpdate = false
+  const forceUpdate = true
 
   async function initStoredData() {
     ocEpisodes = await storage.loadData(CONF.oc.filenames.episodes, ocInstance)
@@ -54,12 +54,7 @@ async function main() {
           ocInstance,
           seriesData
         )
-        episodesData = sorter.applyEpisodeData(
-          sorter.getUniqueEpisodesObjects(ocEpisodes, seriesData),
-          ocEpisodes,
-          ocInstance,
-          episodesData
-        )
+        episodesData = sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
         storeData()
         return await esAuth.getEsAuth()
       })

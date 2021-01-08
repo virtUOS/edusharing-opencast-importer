@@ -1,7 +1,7 @@
 'use strict'
 
 const logger = require('node-file-logger')
-const CONF = require('../config/config.json')
+const CONF = require('../config/config.js')
 const axios = require('axios').default
 
 async function getEsAuth() {
