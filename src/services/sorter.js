@@ -56,6 +56,7 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesDa
     const currentOcSeries = ocSeries[ocSeries.findIndex((ocSeries) => ocSeries.id === series.id)]
 
     if (currentOcSeries) {
+      series.type = 'series'
       if (currentOcSeries.dcTitle) series.title = currentOcSeries.dcTitle
       if (currentOcSeries.dcDescription) series.description = currentOcSeries.dcDescription
       if (currentOcSeries.dcPublisher) series.publisher = currentOcSeries.dcPublisher
@@ -81,22 +82,27 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesDa
   }
 }
 
-function updateMetadata(sortedSeriesData) {
-  if (!sortedSeriesData[0].metadata) {
+function updateMetadata(data) {
+  if (!data[0].metadata) {
     const metadata = { metadata: {} }
     if (!metadata.metadata.firstCrawled) metadata.metadata.firstCrawled = new Date()
-    sortedSeriesData.unshift(metadata)
+    data.unshift(metadata)
   }
 
-  sortedSeriesData[0].metadata.lastUpdated = new Date()
+  data[0].metadata.lastUpdated = new Date()
 
-  return sortedSeriesData
+  return data
 }
 
-function getUniqueEpisodesObjects(filteredEpisodes) {
-  const uniqueEpisodeIds = getUniqueEpisodeIds(filteredEpisodes)
-  const sortedEpisodes = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-  return sortedEpisodes
+function getEpisodeDataObject(ocEpisodes, ocInstance, episodesData) {
+  if (!episodesData || episodesData.length <= ocEpisodes.length) {
+    const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
+    const sortedEpisodes = createObjectsFromEpisodeIds(uniqueEpisodeIds)
+    const episodes = applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData)
+    return updateMetadata(episodes)
+  } else {
+    return updateMetadata(episodesData)
+  }
 }
 
 function getUniqueEpisodeIds(filteredEpisodes) {
@@ -122,6 +128,7 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) 
       ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
 
     if (currentOcEpisode) {
+      episode.type = 'episode'
       if (currentOcEpisode.dcExtent) episode.extent = currentOcEpisode.dcExtent
       if (currentOcEpisode.dcTitle) episode.title = currentOcEpisode.dcTitle
       if (currentOcEpisode.dcDescription) episode.description = currentOcEpisode.dcDescription
@@ -155,7 +162,7 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) 
 
 module.exports = {
   getSortedEpisodesPerSeriesIds,
-  getUniqueEpisodesObjects,
+  getEpisodesDataObject: getEpisodeDataObject,
   applySeriesData,
   applyEpisodeData
 }
