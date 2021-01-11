@@ -18,7 +18,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     const limit = pLimit(CONF.es.maxPendingPromises)
 
     const requests = []
-    for (let i = 0; i < episodesData.length; i++) {
+    for (let i = 1; i < episodesData.length; i++) {
       if (episodesData[i].nodeId) continue
       requests.push(
         limit(() =>
