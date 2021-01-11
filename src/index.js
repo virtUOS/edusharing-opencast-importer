@@ -12,6 +12,8 @@ const filter = require('./services/filter-episodes')
 const esAuth = require('./edu-sharing/get-auth-token')
 const esFolders = require('./edu-sharing/create-folder-structure')
 const esChildren = require('./edu-sharing/create-children')
+const esMetadata = require('./edu-sharing/update-metadata')
+const esPermissions = require('./edu-sharing/update-permissions')
 
 async function main() {
   logger.SetUserOptions(CONF.logger)
@@ -23,7 +25,7 @@ async function main() {
   let episodesData
   const ocInstance = CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain
   let authObj
-  const forceUpdate = true
+  const forceUpdate = false
 
   async function initStoredData() {
     ocEpisodes = await storage.loadData(CONF.oc.filenames.episodes, ocInstance)
@@ -55,22 +57,28 @@ async function main() {
           seriesData
         )
         episodesData = sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
-        storeData()
         return await esAuth.getEsAuth()
       })
       .then(async (auth) => {
         authObj = auth
         return await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
       })
-      .then(async (seriesDataWithMetadata) => {
-        seriesData = seriesDataWithMetadata
-        storeData()
+      .then(async (data) => {
+        seriesData = data
         return await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
       })
+      .then(async (data) => {
+        episodesData = data
+        return await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
+      })
+      .then(async (data) => {
+        episodesData = data
+        return await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
+      })
       .then((res) => {
+        storeData()
         console.log('end')
       })
-      .then(() => storeData())
       .catch((error) => logger.Error(error))
   })
 }
