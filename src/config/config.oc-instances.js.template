@@ -1,0 +1,6 @@
+module.exports = [
+  {
+    protocol: 'https',
+    domain: 'develop.opencast.org'
+  }
+]

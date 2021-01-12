@@ -48,7 +48,7 @@ async function sendPostRequest(url, body, authObj) {
 }
 
 function getUrlOauth() {
-  return CONF.es.protocol + '://' + CONF.es.domain + CONF.es.routes.oauth
+  return CONF.es.host.url + CONF.es.routes.oauth
 }
 
 function getBodyOauth(esClientId, esClientSecret, esUser, esPassword) {

@@ -23,7 +23,7 @@ async function main() {
   let ocSeries
   let seriesData
   let episodesData
-  const ocInstance = CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain
+  const ocInstance = CONF.oc.instances[0].domain
   let authObj
   const forceUpdate = false
 
@@ -42,7 +42,7 @@ async function main() {
   }
 
   initStoredData().then(() => {
-    logger.Info(`[App] Import Opencast public content from ${ocInstance} to ${CONF.es.domain}`)
+    logger.Info(`[App] Import Opencast public content from ${ocInstance} to ${CONF.es.host.domain}`)
     getAllPublishedEpisodes
       .start(ocEpisodes, forceUpdate, ocInstance)
       .then(async (episodes) => {

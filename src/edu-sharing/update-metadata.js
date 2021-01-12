@@ -15,7 +15,7 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
     .catch((error) => logger.Error(error))
 
   async function returnReqsAsPromiseArray(authObj, episodesData) {
-    const limit = pLimit(CONF.es.maxPendingPromises)
+    const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
@@ -54,9 +54,7 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
 
   function getUrlUpdateMetadata(episode) {
     return (
-      CONF.es.protocol +
-      '://' +
-      CONF.es.domain +
+      CONF.es.host.url +
       CONF.es.routes.api +
       CONF.es.routes.baseFolder +
       '/' +

@@ -14,7 +14,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
 
   return await createMainFolder()
     .then(async (res) => {
-      const limit = pLimit(CONF.es.maxPendingPromises)
+      const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
         if (modifiedSeriesData[i].nodeId) continue
@@ -105,9 +105,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
 function getUrlCreateFolder(nodeId) {
   const nodeRoute = nodeId ? '/' + nodeId + '/children' : '/-userhome-/children'
   return (
-    CONF.es.protocol +
-    '://' +
-    CONF.es.domain +
+    CONF.es.host.url +
     CONF.es.routes.api +
     CONF.es.routes.baseFolder +
     nodeRoute +

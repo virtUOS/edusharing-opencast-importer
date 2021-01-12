@@ -18,10 +18,10 @@ async function start(ocEpisodes, force, ocInstance) {
   const episodesIds = new Set()
 
   const url = getUrlForRequest(
-    CONF.oc.protocol,
-    CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain,
+    CONF.oc.instances[0].protocol,
+    CONF.oc.instances[0].domain,
     CONF.oc.routes.getAllEpisodes,
-    CONF.oc.requestOffset
+    CONF.oc.settings.requestOffset
   )
 
   function getUrlForRequest(proto, domain, route, limit) {
@@ -62,14 +62,14 @@ async function start(ocEpisodes, force, ocInstance) {
   }
 
   async function returnReqsAsPromiseArray(url) {
-    const limit = pLimit(CONF.oc.maxPendingPromises)
+    const limit = pLimit(CONF.oc.settings.maxPendingPromises)
     const requests = []
     const pageMax = instanceMetadata.pageMax ? instanceMetadata.pageMax : 1
 
     for (let i = 0; i < pageMax; i++) {
       requests.push(
         limit(() =>
-          sendGetRequest(url, i * CONF.oc.requestOffset)
+          sendGetRequest(url, i * CONF.oc.settings.requestOffset)
             .then(async (data) => {
               if (data.result) {
                 return await handleResponse(data)

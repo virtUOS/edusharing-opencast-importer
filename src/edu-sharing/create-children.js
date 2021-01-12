@@ -15,7 +15,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     .catch((error) => logger.Error(error))
 
   async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
-    const limit = pLimit(CONF.es.maxPendingPromises)
+    const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
@@ -53,9 +53,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
 
   function getUrlCreateChildren(episode, seriesData) {
     return (
-      CONF.es.protocol +
-      '://' +
-      CONF.es.domain +
+      CONF.es.host.url +
       CONF.es.routes.api +
       CONF.es.routes.baseFolder +
       '/' +

@@ -121,3 +121,6 @@ logs/
 # data storage files
 data/*.json
 data/*/*.json
+
+# host specific config file (opencast instances)
+src/config/config.oc-instances.js

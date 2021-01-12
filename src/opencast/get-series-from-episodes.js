@@ -29,8 +29,8 @@ async function start(episodes, ocSeries, force, ocInstance) {
   }
 
   const url = getUrlForRequest(
-    CONF.oc.protocol,
-    CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain,
+    CONF.oc.instances[0].protocol,
+    CONF.oc.instances[0].domain,
     CONF.oc.routes.getSeriesById
   )
 
@@ -48,7 +48,7 @@ async function start(episodes, ocSeries, force, ocInstance) {
   async function getSeriesById(url, seriesIds) {
     logger.Info('[OC Series] Start sending GET requests: ' + ocInstance)
 
-    const limit = pLimit(CONF.oc.maxPendingPromises)
+    const limit = pLimit(CONF.oc.settings.maxPendingPromises)
     const requests = []
 
     for (let i = 0; i < seriesIds.length; i++) {
