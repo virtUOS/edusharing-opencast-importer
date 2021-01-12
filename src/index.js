@@ -57,6 +57,7 @@ async function main() {
           seriesData
         )
         episodesData = sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
+        storeData()
         return await esAuth.getEsAuth()
       })
       .then(async (auth) => {
@@ -65,14 +66,17 @@ async function main() {
       })
       .then(async (data) => {
         seriesData = data
+        storeData()
         return await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
       })
       .then(async (data) => {
         episodesData = data
+        storeData()
         return await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
       })
       .then(async (data) => {
         episodesData = data
+        storeData()
         return await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
       })
       .then((res) => {
