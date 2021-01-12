@@ -13,7 +13,7 @@ function filterAllowedLicensedEpisodes(episodes, allowedLicences) {
     }
   })
 
-  logger.Info('[Filter] Found ' + episodesFiltered.length + ' episodes with allowed licences')
+  logger.Info('[Filter] Found ' + episodesFiltered.length + ' episodes with open licences')
 
   return episodesFiltered
 }

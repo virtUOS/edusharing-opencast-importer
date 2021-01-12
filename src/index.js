@@ -17,7 +17,7 @@ const esPermissions = require('./edu-sharing/update-permissions')
 
 async function main() {
   logger.SetUserOptions(CONF.logger)
-  logger.Info('[Application] Started')
+  logger.Info('[App] Started')
 
   let ocEpisodes
   let ocSeries
@@ -42,6 +42,7 @@ async function main() {
   }
 
   initStoredData().then(() => {
+    logger.Info(`[App] Import Opencast public content from ${ocInstance} to ${CONF.es.domain}`)
     getAllPublishedEpisodes
       .start(ocEpisodes, forceUpdate, ocInstance)
       .then(async (episodes) => {
@@ -81,7 +82,7 @@ async function main() {
       })
       .then((res) => {
         storeData()
-        console.log('end')
+        logger.Info('[App] Finished')
       })
       .catch((error) => logger.Error(error))
   })

@@ -5,10 +5,10 @@ const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 
 async function start(ocEpisodes, force, ocInstance) {
-  if (force) logger.Info('[Episodes] Force episodes GET requests for ' + ocInstance)
+  if (force) logger.Info('[OC Episodes] Force episodes GET requests for ' + ocInstance)
   if (ocEpisodes && !force) {
     if (ocEpisodes.length > 0) {
-      logger.Info('[Episodes] ' + ocEpisodes.length + ' Episodes found for ' + ocInstance)
+      logger.Info('[OC Episodes] ' + ocEpisodes.length + ' Episodes found for ' + ocInstance)
       return ocEpisodes
     }
   }
@@ -90,11 +90,11 @@ async function start(ocEpisodes, force, ocInstance) {
       if (data.total > 0) setInstanceMetadata(data)
     })
     .then(async () => {
-      logger.Info('[Episodes] Start sending GET requests: ' + ocInstance)
+      logger.Info('[OC Episodes] Start sending GET requests: ' + ocInstance)
       return returnReqsAsPromiseArray(url)
     })
     .then(() => {
-      logger.Info('[Episodes] All promissed resolved: ' + ocInstance)
+      logger.Info('[OC Episodes] All promissed resolved: ' + ocInstance)
       return episodes
     })
     .catch((error) => logger.Error(error))

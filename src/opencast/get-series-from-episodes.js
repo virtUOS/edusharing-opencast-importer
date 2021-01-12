@@ -5,15 +5,13 @@ const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 
 async function start(episodes, ocSeries, force, ocInstance) {
-  if (force) logger.Info('[Series] Force series GET requests for ' + ocInstance)
+  if (force) logger.Info('[OC Series] Force sending GET requests for ' + ocInstance)
   if (ocSeries && !force) {
     if (ocSeries.length > 0) {
-      logger.Info('[Series] ' + ocSeries.length + ' Series found for ' + ocInstance)
+      logger.Info('[OC Series] ' + ocSeries.length + ' Series found for ' + ocInstance)
       return ocSeries
     }
   }
-
-  logger.Info('Start getting series ids from episodes')
 
   function extractSeriesIdsFromEpisodes(episodes) {
     const seriesIds = []
@@ -48,7 +46,7 @@ async function start(episodes, ocSeries, force, ocInstance) {
   }
 
   async function getSeriesById(url, seriesIds) {
-    logger.Info('[Series] Start sending GET requests: ' + ocInstance)
+    logger.Info('[OC Series] Start sending GET requests: ' + ocInstance)
 
     const limit = pLimit(CONF.oc.maxPendingPromises)
     const requests = []
@@ -74,7 +72,7 @@ async function start(episodes, ocSeries, force, ocInstance) {
 
   return await getSeriesById(url, seriesIds)
     .then((seriesData) => {
-      logger.Info('[Series] All promissed resolved: ' + ocInstance)
+      logger.Info('[OC Series] All promissed resolved: ' + ocInstance)
       return seriesData.filter((value) => value !== undefined)
     })
     .catch((error) => logger.Error(error))
