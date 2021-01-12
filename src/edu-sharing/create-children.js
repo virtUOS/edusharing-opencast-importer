@@ -18,7 +18,8 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     const limit = pLimit(CONF.es.maxPendingPromises)
 
     const requests = []
-    for (let i = 1; i < episodesData.length; i++) {
+    for (let i = 0; i < episodesData.length; i++) {
+      if (episodesData[i].metadata) continue
       if (episodesData[i].nodeId) continue
       requests.push(
         limit(() =>
@@ -26,10 +27,9 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
             getUrlCreateChildren(episodesData[i], seriesData),
             getBodyCreateFolder(episodesData[i].url),
             getHeadersCreateFolder(authObj),
-            i,
-            episodesData.length
+            i
           ).catch((error) => {
-            logger.Error(error)
+            return error
           })
         )
       )
@@ -38,7 +38,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     return Promise.all(requests)
   }
 
-  async function sendPostRequest(url, body, headers, index, maxIndex) {
+  async function sendPostRequest(url, body, headers, index) {
     return await axios
       .post(url, body, headers)
       .then((response) => {
@@ -76,7 +76,8 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
 
   function getParentNodeId(episode, seriesData) {
     if (episode.isPartOf) {
-      return seriesData.find((series) => series.id === episode.isPartOf).nodeId
+      const seriesObjFound = seriesData.find((series) => series.id === episode.isPartOf)
+      return seriesObjFound ? seriesObjFound.nodeId : seriesData[0].metadata.nodeId
     } else {
       return seriesData[0].metadata.nodeId
     }
