@@ -1,7 +1,7 @@
 {
   "name": "edusharing-opencast-importer",
   "version": "0.0.1",
-  "description": "This importer harvests episodes (lecture recordings) from Opencast instances and push it as external references to an Edu-Sharing instance.",
+  "description": "This importer harvests episodes and series (lecture recordings) from Opencast instances and pushes them as external references to an Edu-Sharing instance.",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
