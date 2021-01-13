@@ -12,6 +12,9 @@
 > <strong>HIGHLY IN DEVELOPMENT: Do not use for production</strong><br><br>
 > This importer harvests episodes and series (lecture recordings) from Opencast instances and pushes them as external references to an Edu-Sharing instance.
 
+## Requirements
+* NodeJS 10.12.0 or higher
+
 ## Install
 
 1. Clone repository and change into repository folder
@@ -19,7 +22,7 @@
 
 ## Config Minimum
 
-1. Add new user to your Edu-Sharing instance 
+1. Add new user to your Edu-Sharing instance. For more information see [Edu-Sharing documentation](https://docs.edu-sharing.com/confluence/edp/de/administration/managing-user-groups/nutzer-verwalten).
 2. Rename `.env.template` file to `.env`
 3. Edit `.env` file as described in the comments.<br />Minimum required variables are Edu-Sharing host specs (protocol, domain), user and password.
 ```sh
@@ -40,6 +43,15 @@ ES_PASSWORD=opencast
 }
 ```
 
+## Usage
+
+1. Run `npm start` in repository directory.
+```sh
+npm start
+// or directly
+node src/index.js
+```
+
 ## Config Details
 
 Will be added later.
@@ -57,11 +69,8 @@ Will be added later.
 
 ## Develop
 
-1. Setup development environment. You can use the official Edu-Sharing docker container.<br />
-https://hub.docker.com/r/edusharing/repo-rs-moodle/
-
+1. Setup development environment. You can use the [official Edu-Sharing docker container](https://hub.docker.com/r/edusharing/repo-rs-moodle/).
 2. Follow all minimum config steps as described above.
-
 3. Run nodemon to watch for file changes
 ```sh
 npm run dev
