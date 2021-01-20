@@ -33,7 +33,7 @@
     "OER"
   ],
   "author": "Florian Feyen",
-  "license": "GPLv3",
+  "license": "GPL-3.0",
   "devDependencies": {
     "axios-debug-log": "^0.8.2",
     "eslint": "^7.18.0",
