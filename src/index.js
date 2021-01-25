@@ -25,7 +25,7 @@ async function main() {
   let episodesData
   const ocInstance = CONF.oc.instances[0].domain
   let authObj
-  const forceUpdate = false
+  const forceUpdate = CONF.oc.forceUpdate
 
   async function initStoredData() {
     ocEpisodes = await storage.loadData(CONF.oc.filenames.episodes, ocInstance)

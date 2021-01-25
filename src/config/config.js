@@ -20,6 +20,7 @@ config.es = {
 }
 
 config.oc = {
+  forceUpdate: false,
   instances: ocInstances,
   settings: {
     maxPendingPromises: 2,
