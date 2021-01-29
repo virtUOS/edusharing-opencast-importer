@@ -1,12 +1,17 @@
 'use strict'
 const axios = require('axios').default
 const logger = require('node-file-logger')
-const CONF = require('../config/config.json')
+const CONF = require('../config/config.js')
+const pLimit = require('p-limit')
 
-async function start(episodes, ocSeries, force) {
-  if (ocSeries.length > 0 || !force) return ocSeries
-
-  logger.Info('Start getting series ids from episodes')
+async function start(episodes, ocSeries, force, ocInstance) {
+  if (force) logger.Info('[OC Series] Force sending GET requests for ' + ocInstance)
+  if (ocSeries && !force) {
+    if (ocSeries.length > 0) {
+      logger.Info('[OC Series] ' + ocSeries.length + ' Series found for ' + ocInstance)
+      return ocSeries
+    }
+  }
 
   function extractSeriesIdsFromEpisodes(episodes) {
     const seriesIds = []
@@ -24,8 +29,8 @@ async function start(episodes, ocSeries, force) {
   }
 
   const url = getUrlForRequest(
-    CONF.oc.protocol,
-    CONF.oc.develop.useDevDomain ? CONF.oc.domainDev : CONF.oc.domain,
+    CONF.oc.instances[0].protocol,
+    CONF.oc.instances[0].domain,
     CONF.oc.routes.getSeriesById
   )
 
@@ -41,21 +46,22 @@ async function start(episodes, ocSeries, force) {
   }
 
   async function getSeriesById(url, seriesIds) {
-    logger.Info('[Series] Start sending GET requests: ' + url)
+    logger.Info('[OC Series] Start sending GET requests: ' + ocInstance)
 
+    const limit = pLimit(CONF.oc.settings.maxPendingPromises)
     const requests = []
 
     for (let i = 0; i < seriesIds.length; i++) {
       requests.push(
-        await sendGetRequest(url, seriesIds[i])
-          .then(async(data) => {
-            if (data.result) {
-              return data.result
-            } else {
-              // logger.Warn('No series found for ID: ' + seriesIds[i])
-            }
-          })
-          .catch((error) => logger.Error(error))
+        limit(() =>
+          sendGetRequest(url, seriesIds[i])
+            .then(async (data) => {
+              if (data.result) {
+                return data.result
+              }
+            })
+            .catch((error) => logger.Error(error))
+        )
       )
     }
 
@@ -66,7 +72,7 @@ async function start(episodes, ocSeries, force) {
 
   return await getSeriesById(url, seriesIds)
     .then((seriesData) => {
-      logger.Info('[Series] All promissed resolved: ' + url)
+      logger.Info('[OC Series] All promissed resolved: ' + ocInstance)
       return seriesData.filter((value) => value !== undefined)
     })
     .catch((error) => logger.Error(error))

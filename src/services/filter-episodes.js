@@ -1,12 +1,23 @@
 'use strict'
 
-function filterForOpenLicensedEpisodes(episodes) {
-  // const filteredEpisodes = episodes.filter(episode => episode.dcLicense === 'CC-BY')
-  const filteredEpisodes = episodes
+const logger = require('node-file-logger')
 
-  return filteredEpisodes
+function filterAllowedLicensedEpisodes(episodes, allowedLicences) {
+  const episodesWithLicenseInfo = episodes.filter((episode) => episode.dcLicense)
+
+  const episodesFiltered = episodesWithLicenseInfo.filter((episode) => {
+    for (let i = 0; i < allowedLicences.length; i++) {
+      if (episode.dcLicense.replace(/-/g, ' ') === allowedLicences[i].replace(/-/g, ' ')) {
+        return true
+      }
+    }
+  })
+
+  logger.Info('[Filter] Found ' + episodesFiltered.length + ' episodes with open licences')
+
+  return episodesFiltered
 }
 
 module.exports = {
-  filterForOpenLicensedEpisodes
+  filterAllowedLicensedEpisodes
 }
