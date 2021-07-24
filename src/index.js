@@ -28,10 +28,10 @@ async function main() {
   const forceUpdate = CONF.oc.forceUpdate
 
   async function initStoredData() {
-    ocEpisodes = await storage.loadData(CONF.oc.filenames.episodes, ocInstance)
-    ocSeries = await storage.loadData(CONF.oc.filenames.series, ocInstance)
-    episodesData = await storage.loadData(CONF.oc.filenames.episodesData, ocInstance)
-    seriesData = await storage.loadData(CONF.oc.filenames.seriesData, ocInstance)
+    ocEpisodes = (await storage.loadData(CONF.oc.filenames.episodes, ocInstance)) || []
+    ocSeries = (await storage.loadData(CONF.oc.filenames.series, ocInstance)) || []
+    episodesData = (await storage.loadData(CONF.oc.filenames.episodesData, ocInstance)) || []
+    seriesData = (await storage.loadData(CONF.oc.filenames.seriesData, ocInstance)) || []
   }
 
   async function storeData() {

@@ -12,8 +12,10 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   const headers = getHeadersCreateFolder(authObj)
   const requests = []
 
-  return await createMainFolder()
+  return await createMainFolder(ocInstance)
     .then(async (res) => {
+      if (seriesData.length === 0) return seriesData
+
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
@@ -49,16 +51,24 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         return modifiedSeriesData
       })
     })
+    .catch((err) => logger.Error('[ES API] ' + err))
 
-  async function createMainFolder() {
-    if (!modifiedSeriesData[0].metadata.nodeId) {
+  async function createMainFolder(ocInstance) {
+    const existingNodeId =
+      modifiedSeriesData.length > 1
+        ? modifiedSeriesData[0].metadata.nodeId
+        : modifiedSeriesData.metadata.nodeId
+
+    if (!existingNodeId) {
       return await sendPostRequest(
         getUrlCreateFolder(),
         getBodyCreateFolder(ocInstance),
         headers,
         ocInstance,
         0
-      )
+      ).catch((err) => {
+        return err
+      })
     }
   }
 
@@ -100,48 +110,48 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     modifiedSeriesData[index].parentId = response.parent.id
     modifiedSeriesData[index].lastUpdated = new Date()
   }
-}
 
-function getUrlCreateFolder(nodeId) {
-  const nodeRoute = nodeId ? '/' + nodeId + '/children' : '/-userhome-/children'
-  return (
-    CONF.es.host.url +
-    CONF.es.routes.api +
-    CONF.es.routes.baseFolder +
-    nodeRoute +
-    '/?' +
-    getParamsCreateFolder()
-  )
-}
+  function getUrlCreateFolder(nodeId) {
+    const nodeRoute = nodeId ? '/' + nodeId + '/children' : '/-userhome-/children'
+    return (
+      CONF.es.host.url +
+      CONF.es.routes.api +
+      CONF.es.routes.baseFolder +
+      nodeRoute +
+      '/?' +
+      getParamsCreateFolder()
+    )
+  }
 
-function getParamsCreateFolder() {
-  return new URLSearchParams({
-    type: 'cm:folder',
-    renameIfExists: false
-  })
-}
+  function getParamsCreateFolder() {
+    return new URLSearchParams({
+      type: 'cm:folder',
+      renameIfExists: false
+    })
+  }
 
-function getBodyCreateFolder(folderName) {
-  // const randomName = ocInstance + '-' + Math.floor(Math.random() * 100000)
-  return JSON.stringify({
-    'cm:name': [folderName],
-    'cm:edu_metadataset': ['mds'],
-    'cm:edu_forcemetadataset': ['true']
-  }).toString()
-}
+  function getBodyCreateFolder(folderName) {
+    // const randomName = ocInstance + '-' + Math.floor(Math.random() * 100000)
+    return JSON.stringify({
+      'cm:name': [folderName],
+      'cm:edu_metadataset': ['mds'],
+      'cm:edu_forcemetadataset': ['true']
+    }).toString()
+  }
 
-function getHeadersCreateFolder(authObj) {
-  return {
-    headers: {
-      Accept: 'application/json',
-      'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
-      'Accept-Encoding': 'gzip, deflate',
-      'Content-Type': 'application/json',
-      locale: 'de_DE',
-      Authorization: authObj.type + ' ' + authObj.token_access,
-      Connection: 'keep-alive',
-      Pragma: 'no-cache',
-      'Cache-Control': 'no-cache'
+  function getHeadersCreateFolder(authObj) {
+    return {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
+        'Accept-Encoding': 'gzip, deflate',
+        'Content-Type': 'application/json',
+        locale: 'de_DE',
+        Authorization: authObj.type + ' ' + authObj.token_access,
+        Connection: 'keep-alive',
+        Pragma: 'no-cache',
+        'Cache-Control': 'no-cache'
+      }
     }
   }
 }
