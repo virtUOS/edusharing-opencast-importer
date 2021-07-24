@@ -47,7 +47,6 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
         }
       })
       .catch((error) => {
-        console.log(error.response.data)
         logger.Error('[ES API] ' + error)
       })
   }
@@ -62,7 +61,7 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
       '/metadata?versionComment=METADATA_UPDATE'
     )
   }
-
+  // {"ccm:commonlicense_key":["PDM"],"ccm:questionsallowed":[true],"ccm:author_freetext":[""],"ccm:lifecyclecontributer_author":[null]}
   function getBodyUpdateMetadata(episode) {
     const licenseLowerDash = episode.license.replace(/\s+/g, '-').toLowerCase()
     const licenseUpperUnderscore = episode.license
