@@ -109,9 +109,9 @@ function moveObjToFirstPosition(data, index) {
 
 function setMetadataDates(data) {
   if (!data[0].firstCrawled) data[0].firstCrawled = new Date()
+  if (!data[0].nodeId) data[0].nodeId = undefined
+  if (!data[0].parentId) data[0].parentId = undefined
   data[0].lastUpdated = new Date()
-  data[0].nodeId = undefined
-  data[0].parentId = undefined
 
   return data
 }
