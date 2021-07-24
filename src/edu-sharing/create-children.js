@@ -19,7 +19,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
-      if (episodesData[i].metadata) continue
+      if (episodesData[i].type === 'metadata') continue
       if (episodesData[i].nodeId) continue
       requests.push(
         limit(() =>
@@ -77,7 +77,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
       const seriesObjFound = seriesData.find((series) => series.id === episode.isPartOf)
       return seriesObjFound ? seriesObjFound.nodeId : seriesData[0].metadata.nodeId
     } else {
-      return seriesData[0].metadata.nodeId
+      return seriesData[0].nodeId
     }
   }
 

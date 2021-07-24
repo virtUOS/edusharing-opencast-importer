@@ -1,6 +1,7 @@
 'use strict'
 
 function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, seriesData) {
+  if (series.length === 0 && seriesData.length === 0) return updateMetadata([])
   if (!seriesData || seriesData.length <= series.length) {
     const uniqueSeriesIds = getUniqueSeriesIds(series)
     const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
@@ -83,26 +84,43 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesDa
 }
 
 function updateMetadata(data) {
-  if (!data[0].metadata) {
-    const metadata = { metadata: {} }
-    if (!metadata.metadata.firstCrawled) metadata.metadata.firstCrawled = new Date()
-    data.unshift(metadata)
+  const metadataIndex = getMetadataIndex(data)
+  if (data.length === 0) {
+    data.unshift({ type: 'metadata' })
+  } else if (metadataIndex === -1) {
+    data.unshift({ type: 'metadata' })
+  } else if (metadataIndex > 0) {
+    data = moveObjToFirstPosition(data, metadataIndex)
   }
 
-  data[0].metadata.lastUpdated = new Date()
+  return setMetadataDates(data)
+}
+
+function getMetadataIndex(data) {
+  return data.findIndex((object) => object.type === 'metadata')
+}
+
+function moveObjToFirstPosition(data, index) {
+  const metadataObj = data[index]
+  data.unshift(metadataObj)
+  data.splice(index)
+  return data
+}
+
+function setMetadataDates(data) {
+  if (!data[0].firstCrawled) data[0].firstCrawled = new Date()
+  data[0].lastUpdated = new Date()
+  data[0].nodeId = undefined
+  data[0].parentId = undefined
 
   return data
 }
 
-function getEpisodeDataObject(ocEpisodes, ocInstance, episodesData) {
-  if (!episodesData || episodesData.length <= ocEpisodes.length) {
-    const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
-    const sortedEpisodes = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-    const episodes = applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData)
-    return updateMetadata(episodes)
-  } else {
-    return updateMetadata(episodesData)
-  }
+function getEpisodesDataObject(ocEpisodes, ocInstance, episodesData) {
+  const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
+  const episodeObjs = createObjectsFromEpisodeIds(uniqueEpisodeIds)
+  const episodes = applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData)
+  return updateMetadata(episodes)
 }
 
 function getUniqueEpisodeIds(filteredEpisodes) {
@@ -121,30 +139,32 @@ function createObjectsFromEpisodeIds(uniqueEpisodeIds) {
   })
 }
 
-function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) {
-  return sortedEpisodes.map((episode) => {
+function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
+  return episodeObjs.map((episode) => {
     const existingEpisode = getExistingEpisode(episodesData, episode.id)
-    const currentOcEpisode =
-      ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
 
-    if (currentOcEpisode) {
-      episode.type = 'episode'
-      if (currentOcEpisode.dcExtent) episode.extent = currentOcEpisode.dcExtent
-      if (currentOcEpisode.dcTitle) episode.title = currentOcEpisode.dcTitle
-      if (currentOcEpisode.dcDescription) episode.description = currentOcEpisode.dcDescription
-      if (currentOcEpisode.dcCreator) episode.creator = currentOcEpisode.dcCreator
-      if (currentOcEpisode.dcCreated) episode.created = currentOcEpisode.dcCreated
-      if (currentOcEpisode.dcLicense) episode.license = currentOcEpisode.dcLicense
-      if (currentOcEpisode.dcIsPartOf) episode.isPartOf = currentOcEpisode.dcIsPartOf
-      if (currentOcEpisode.mediaType) episode.mediaType = currentOcEpisode.mediaType
-      if (currentOcEpisode.keywords.length > 0) episode.keywords = currentOcEpisode.keywords
-      episode.url = createEpisodeUrl(ocInstance, episode.id)
-      if (currentOcEpisode.modified) episode.modified = currentOcEpisode.modified
-      episode.from = ocInstance
-      episode.lastUpdated = new Date()
-      if (existingEpisode) {
-        if (existingEpisode.nodeId) episode.nodeId = existingEpisode.nodeId
-        if (existingEpisode.parentId) episode.parentId = existingEpisode.parentId
+    if (existingEpisode) {
+      existingEpisode.lastUpdated = new Date()
+      return existingEpisode
+    } else {
+      const newOcEpisode =
+        ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
+
+      if (newOcEpisode) {
+        episode.type = 'episode'
+        if (newOcEpisode.dcExtent) episode.extent = newOcEpisode.dcExtent
+        if (newOcEpisode.dcTitle) episode.title = newOcEpisode.dcTitle
+        if (newOcEpisode.dcDescription) episode.description = newOcEpisode.dcDescription
+        if (newOcEpisode.dcCreator) episode.creator = newOcEpisode.dcCreator
+        if (newOcEpisode.dcCreated) episode.created = newOcEpisode.dcCreated
+        if (newOcEpisode.dcLicense) episode.license = newOcEpisode.dcLicense
+        if (newOcEpisode.dcIsPartOf) episode.isPartOf = newOcEpisode.dcIsPartOf
+        if (newOcEpisode.mediaType) episode.mediaType = newOcEpisode.mediaType
+        if (newOcEpisode.keywords.length > 0) episode.keywords = newOcEpisode.keywords
+        episode.url = createEpisodeUrl(ocInstance, episode.id)
+        if (newOcEpisode.modified) episode.modified = newOcEpisode.modified
+        episode.from = ocInstance
+        episode.lastUpdated = new Date()
       }
 
       return episode
@@ -162,7 +182,7 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) 
 
 module.exports = {
   getSortedEpisodesPerSeriesIds,
-  getEpisodesDataObject: getEpisodeDataObject,
+  getEpisodesDataObject,
   applySeriesData,
   applyEpisodeData
 }

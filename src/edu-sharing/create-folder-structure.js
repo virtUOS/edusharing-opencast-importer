@@ -14,17 +14,17 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
 
   return await createMainFolder(ocInstance)
     .then(async (res) => {
-      if (seriesData.length === 0) return seriesData
+      if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
         if (modifiedSeriesData[i].nodeId) continue
-        if (modifiedSeriesData[0].metadata.nodeId) {
+        if (modifiedSeriesData[0].nodeId && modifiedSeriesData[0].type === 'metadata') {
           requests.push(
             limit(() =>
               sendPostRequest(
-                getUrlCreateFolder(modifiedSeriesData[0].metadata.nodeId),
+                getUrlCreateFolder(modifiedSeriesData[0].nodeId),
                 getBodyCreateFolder(
                   modifiedSeriesData[i].title
                     .replace(/ /g, '-')
@@ -54,12 +54,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     .catch((err) => logger.Error('[ES API] ' + err))
 
   async function createMainFolder(ocInstance) {
-    const existingNodeId =
-      modifiedSeriesData.length > 1
-        ? modifiedSeriesData[0].metadata.nodeId
-        : modifiedSeriesData.metadata.nodeId
-
-    if (!existingNodeId) {
+    if (modifiedSeriesData[0].type === 'metadata' && !modifiedSeriesData[0].nodeId) {
       return await sendPostRequest(
         getUrlCreateFolder(),
         getBodyCreateFolder(ocInstance),
@@ -100,9 +95,10 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   }
 
   function addMetadataToSeriesData(response) {
-    // TODO: Hacky, needs a better solution to find the metadata object in seriesData array
-    modifiedSeriesData[0].metadata.nodeId = response.ref.id
-    modifiedSeriesData[0].metadata.parentId = response.parent.id
+    if (modifiedSeriesData[0].type === 'metadata') {
+      modifiedSeriesData[0].nodeId = response.ref.id
+      modifiedSeriesData[0].parentId = response.parent.id
+    }
   }
 
   function addNodeIdToSeries(response, index) {
