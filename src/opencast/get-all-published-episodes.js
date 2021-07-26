@@ -4,7 +4,7 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 
-async function start(ocEpisodes, force, ocInstance) {
+async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
   if (force) logger.Info('[OC Episodes] Force episodes GET requests for ' + ocInstance)
   if (ocEpisodes && !force) {
     if (ocEpisodes.length > 0) {
@@ -18,8 +18,8 @@ async function start(ocEpisodes, force, ocInstance) {
   const episodesIds = new Set()
 
   const url = getUrlForRequest(
-    CONF.oc.instances[0].protocol,
-    CONF.oc.instances[0].domain,
+    ocInstanceObj.protocol,
+    ocInstance,
     CONF.oc.routes.getAllEpisodes,
     CONF.oc.settings.requestOffset
   )
