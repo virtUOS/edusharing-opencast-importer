@@ -86,7 +86,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   function handleResponse(res, ocInstance, index) {
     if (!res) throw Error(res)
     if (res.status === 200 && res.data.node.name === ocInstance) {
-      logger.Info('[ES-API] Created main folder for ' + ocInstance)
+      logger.Info('[ES API] Created main folder for ' + ocInstance)
       return addMetadataToSeriesData(res.data.node)
     } else if (res.status === 200) {
       return addNodeIdToSeries(res.data.node, index)
