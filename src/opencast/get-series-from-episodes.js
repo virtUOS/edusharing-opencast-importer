@@ -5,7 +5,6 @@ const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 
 async function start(episodes, ocSeries, force, ocInstance) {
-  if (ocSeries.length === 0) return ocSeries
   if (force) logger.Info('[OC Series] Force sending GET requests for ' + ocInstance)
   if (ocSeries && !force) {
     if (ocSeries.length > 0) {

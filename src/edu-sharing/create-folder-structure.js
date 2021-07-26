@@ -20,25 +20,24 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
         if (modifiedSeriesData[i].nodeId) continue
-        if (modifiedSeriesData[0].nodeId && modifiedSeriesData[0].type === 'metadata') {
-          requests.push(
-            limit(() =>
-              sendPostRequest(
-                getUrlCreateFolder(modifiedSeriesData[0].nodeId),
-                getBodyCreateFolder(
-                  modifiedSeriesData[i].title
-                    .replace(/ /g, '-')
-                    .replace(/\(|\)/g, '')
-                    .toLowerCase()
-                    .substring(0, 50)
-                ),
-                headers,
-                ocInstance,
-                i
-              )
+        if (modifiedSeriesData[i].type === 'metadata') continue
+        requests.push(
+          limit(() =>
+            sendPostRequest(
+              getUrlCreateFolder(modifiedSeriesData[0].nodeId),
+              getBodyCreateFolder(
+                modifiedSeriesData[i].title
+                  .replace(/ /g, '-')
+                  .replace(/\(|\)/g, '')
+                  .toLowerCase()
+                  .substring(0, 50)
+              ),
+              headers,
+              ocInstance,
+              i
             )
           )
-        }
+        )
       }
     })
     .then((res) => {
