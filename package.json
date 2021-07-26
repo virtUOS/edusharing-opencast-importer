@@ -2,10 +2,10 @@
   "name": "edusharing-opencast-importer",
   "version": "0.1.0",
   "description": "This importer harvests episodes and series (lecture recordings) from Opencast instances and pushes them as external references to an Edu-Sharing instance.",
-  "main": "src/index.js",
+  "main": "src/main.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon -x 'clear;node' src/index.js",
+    "start": "node src/main.js",
+    "dev": "nodemon -x 'clear;node' src/main.js",
     "lint": "eslint '**/*js'",
     "lint:fix": "eslint '**/*js' --fix",
     "format": "prettier-eslint $PWD/'**/*js' --write",
