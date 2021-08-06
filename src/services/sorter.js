@@ -165,8 +165,8 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
         if (newOcEpisode.modified) episode.modified = newOcEpisode.modified
         episode.from = ocInstance
         episode.lastUpdated = new Date()
-        episode.previewPlayer = getPrieviewUrl('presenter/player+preview', newOcEpisode)
-        episode.previewSearch = getPrieviewUrl('presenter/search+preview', newOcEpisode)
+        episode.previewPlayer = getPreviewUrl('presenter/player+preview', newOcEpisode)
+        episode.previewSearch = getPreviewUrl('presenter/search+preview', newOcEpisode)
       }
       return episode
     }
@@ -180,7 +180,7 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
     return `https://${ocInstance}/play/${episodeId}`
   }
 
-  function getPrieviewUrl(previewType, newOcEpisode) {
+  function getPreviewUrl(previewType, newOcEpisode) {
     const attachment = newOcEpisode.mediapackage.attachments.attachment
     for (let i = 0; i < attachment.length; i++) {
       if (attachment[i].type === previewType) {
