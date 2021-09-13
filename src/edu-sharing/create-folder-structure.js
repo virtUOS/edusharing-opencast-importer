@@ -4,6 +4,7 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
+const existingNodes = require('../edu-sharing/get-existing-nodes.js')
 
 async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
@@ -11,33 +12,46 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   const modifiedSeriesData = seriesData
   const headers = getHeadersCreateFolder(authObj)
   const requests = []
+  let existingDirs = []
 
-  return await createMainFolder(ocInstance)
+  return await existingNodes
+    .checkExistingDirs(ocInstance, authObj)
+    .then(async (dirs) => {
+      existingDirs = dirs
+      await createMainFolder(ocInstance, existingDirs)
+    })
     .then(async (res) => {
       if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
-        if (modifiedSeriesData[i].nodeId) continue
-        if (modifiedSeriesData[i].type === 'metadata') continue
-        requests.push(
-          limit(() =>
-            sendPostRequest(
-              getUrlCreateFolder(modifiedSeriesData[0].nodeId),
-              getBodyCreateFolder(
-                modifiedSeriesData[i].title
-                  .replace(/ /g, '-')
-                  .replace(/\(|\)/g, '')
-                  .toLowerCase()
-                  .substring(0, 50)
-              ),
-              headers,
-              ocInstance,
-              i
+        let found = false
+        if (existingDirs.nodes) {
+          for (const node of existingDirs.nodes) {
+            if (node.name === modifyStringES(modifiedSeriesData[i].title)) {
+              addNodeIdToSeries(node, i)
+              found = true
+            }
+          }
+        }
+
+        console.log(found)
+        if (found === false) {
+          // if (modifiedSeriesData[i].nodeId) continue
+          if (modifiedSeriesData[i].type === 'metadata') continue
+          requests.push(
+            limit(() =>
+              sendPostRequest(
+                getUrlCreateFolder(modifiedSeriesData[0].nodeId),
+                getBodyCreateFolder(modifyStringES(modifiedSeriesData[i].title)),
+                headers,
+                ocInstance,
+                i
+              )
             )
           )
-        )
+        }
       }
     })
     .then((res) => {
@@ -47,13 +61,16 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
             '[ES API] ' + CONF.es.protocol + '://' + CONF.es.domain + ' is not reachable - skipping'
           )
         }
+
         return modifiedSeriesData
       })
     })
     .catch((err) => logger.Error('[ES API] ' + err))
 
-  async function createMainFolder(ocInstance) {
-    if (modifiedSeriesData[0].type === 'metadata' && !modifiedSeriesData[0].nodeId) {
+  async function createMainFolder(ocInstance, dirs) {
+    if (dirs.name === ocInstance) {
+      return addMetadataToSeriesData(dirs)
+    } else if (modifiedSeriesData[0].type === 'metadata') {
       return await sendPostRequest(
         getUrlCreateFolder(),
         getBodyCreateFolder(ocInstance),
@@ -79,6 +96,9 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
           return error.code
         }
         if (error.response.status === 409) return true
+        logger.Error('[ES API] ' + error)
+      })
+      .catch((error) => {
         logger.Error('[ES API] ' + error)
       })
   }
@@ -148,6 +168,10 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         'Cache-Control': 'no-cache'
       }
     }
+  }
+
+  function modifyStringES(s) {
+    return s.replace(/ /g, '-').replace(/\(|\)/g, '').toLowerCase().substring(0, 50)
   }
 }
 
