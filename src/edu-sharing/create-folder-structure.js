@@ -26,18 +26,17 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
       for (let i = 1; i < modifiedSeriesData.length; i++) {
-        let found = false
+        let foundDir = false
         if (existingDirs.nodes) {
           for (const node of existingDirs.nodes) {
             if (node.name === modifyStringES(modifiedSeriesData[i].title)) {
               addNodeIdToSeries(node, i)
-              found = true
+              foundDir = true
             }
           }
         }
 
-        console.log(found)
-        if (found === false) {
+        if (foundDir === false) {
           // if (modifiedSeriesData[i].nodeId) continue
           if (modifiedSeriesData[i].type === 'metadata') continue
           requests.push(

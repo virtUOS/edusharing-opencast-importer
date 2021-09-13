@@ -1,4 +1,5 @@
 'use strict'
+
 require('dotenv').config()
 require('axios-debug-log')
 const logger = require('node-file-logger')
@@ -49,14 +50,13 @@ async function checkExistingDirs(ocInstance, authObj) {
           logger.Error('[ES API] ' + err)
         })
     })
-    // if ocInstance directory does not exist
     .catch((err) => {
+      // if ocInstance directory does not exist
       if (err.response.status === 404) {
         return esDirectories
       }
       logger.Error('[ES API] ' + err)
     })
-
   return esDirectories
 }
 
