@@ -13,24 +13,20 @@ const localPath = path.resolve(__dirname) + '/../../data/'
 
 function createFolder(dir) {
   if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir)
+    fs.mkdirSync(dir, { recursive: true })
   }
 }
 
 async function loadData(filename, ocInstance) {
   createFolder(localPath + ocInstance)
   const filepath = localPath + ocInstance + '/' + filename
-  /*   return new Promise((resolve, reject) => {
-    fs.readFile(filepath, 'utf8', (error, data) => {
-      error ? reject(logger.Error(error)) : resolve(JSON.parse(data))
-    })
-  }) */
   try {
     const data = await fs.readFileSync(filepath, { encoding: 'utf8' })
     try {
       return JSON.parse(data)
     } catch (error) {
-      // TODO
+      logger.Error('[Storage] Error while parsing data (' + filename + ') : ' + error)
+      // -> continue with new fetched data?
     }
   } catch (error) {
     error.code === 'ENOENT'
@@ -41,11 +37,11 @@ async function loadData(filename, ocInstance) {
 
 async function storeData(filename, data, ocInstance) {
   const filepath = localPath + ocInstance + '/' + filename
-  return new Promise((resolve, reject) => {
-    fs.writeFileSync(filepath, JSON.stringify(data, null, 2), writeOptions, (error, data) => {
-      error ? reject(logger.Error(error)) : resolve(data)
-    })
-  })
+  try {
+    fs.writeFileSync(filepath, JSON.stringify(data, null, 2), writeOptions)
+  } catch (error) {
+    logger.Error('[Storage] Error while saving data: ' + error)
+  }
 }
 
 module.exports = {
