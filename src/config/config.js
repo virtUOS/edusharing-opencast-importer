@@ -20,7 +20,7 @@ config.es = {
 }
 
 config.oc = {
-  forceUpdate: false,
+  forceUpdate: true,
   instances: ocInstances,
   settings: {
     maxPendingPromises: 2,
@@ -51,7 +51,7 @@ config.logger = {
 }
 
 config.filter = {
-  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD']
+  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
 }
 
 module.exports = config

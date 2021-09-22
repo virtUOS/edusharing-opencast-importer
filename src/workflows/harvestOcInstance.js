@@ -58,9 +58,15 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
             ocSeries,
             ocEpisodes,
             ocInstance,
-            seriesData
+            seriesData,
+            ocInstanceObj
           )
-          episodesData = sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
+          episodesData = sorter.getEpisodesDataObject(
+            ocEpisodes,
+            ocInstance,
+            episodesData,
+            ocInstanceObj
+          )
           storeData()
           return await esAuth.getEsAuth()
         })
