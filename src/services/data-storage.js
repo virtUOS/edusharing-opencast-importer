@@ -24,14 +24,13 @@ async function loadData(filename, ocInstance) {
     const data = await fs.readFileSync(filepath, { encoding: 'utf8' })
     try {
       return JSON.parse(data)
-    } catch (error) {
-      logger.Error('[Storage] Error while parsing data (' + filename + ') : ' + error)
-      // -> continue with new fetched data?
-    }
+    } catch (error) {}
   } catch (error) {
-    error.code === 'ENOENT'
-      ? logger.Info('[Storage] No saved data found (' + filename + ')')
-      : logger.Error(error)
+    if (error.code === 'ENOENT') {
+      logger.Info('[Storage] No saved data found (' + filename + ')')
+    } else {
+      logger.Error(error)
+    }
   }
 }
 

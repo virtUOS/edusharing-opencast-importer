@@ -24,10 +24,17 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   let authObj
 
   async function initStoredData() {
-    ocEpisodes = (await storage.loadData(CONF.oc.filenames.episodes, ocInstance)) || []
-    ocSeries = (await storage.loadData(CONF.oc.filenames.series, ocInstance)) || []
-    episodesData = (await storage.loadData(CONF.oc.filenames.episodesData, ocInstance)) || []
-    seriesData = (await storage.loadData(CONF.oc.filenames.seriesData, ocInstance)) || []
+    const dataPromises = [
+      storage.loadData(CONF.oc.filenames.episodes, ocInstance),
+      storage.loadData(CONF.oc.filenames.series, ocInstance),
+      storage.loadData(CONF.oc.filenames.episodesData, ocInstance),
+      storage.loadData(CONF.oc.filenames.seriesData, ocInstance)
+    ]
+    const loadedData = await Promise.allSettled(dataPromises)
+    ocEpisodes = loadedData[0].status === 'fulfilled' ? loadedData[0].value : []
+    ocSeries = loadedData[1].status === 'fulfilled' ? loadedData[1].value : []
+    seriesData = loadedData[2].status === 'fulfilled' ? loadedData[2].value : []
+    episodesData = loadedData[3].status === 'fulfilled' ? loadedData[3].value : []
   }
 
   async function storeData() {
