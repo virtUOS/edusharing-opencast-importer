@@ -1,8 +1,10 @@
 'use strict'
+require('../models/errors')
 
 const fs = require('fs')
 const logger = require('node-file-logger')
 const path = require('path')
+const { NoSavedDataError } = require('../models/errors')
 
 const writeOptions = {
   encode: 'utf8',
@@ -27,7 +29,7 @@ async function loadData(filename, ocInstance) {
     } catch (error) {}
   } catch (error) {
     if (error.code === 'ENOENT') {
-      logger.Info('[Storage] No saved data found (' + filename + ')')
+      throw new NoSavedDataError(filename)
     } else {
       logger.Error(error)
     }

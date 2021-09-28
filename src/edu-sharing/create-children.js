@@ -12,7 +12,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     .then(async (res) => {
       return episodesData
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => logger.Error(error.message))
 
   async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)

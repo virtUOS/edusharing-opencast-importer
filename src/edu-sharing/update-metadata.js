@@ -12,14 +12,15 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
     .then(async (res) => {
       return episodesData
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => logger.Error(error.message))
 
   async function returnReqsAsPromiseArray(authObj, episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
-      if (!episodesData[i].nodeId) continue
+      // console.log(episodesData[0])
+      if (episodesData[i].nodeId) continue
 
       requests.push(
         limit(() =>
@@ -63,6 +64,7 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
   }
   // {"ccm:commonlicense_key":["PDM"],"ccm:questionsallowed":[true],"ccm:author_freetext":[""],"ccm:lifecyclecontributer_author":[null]}
   function getBodyUpdateMetadata(episode) {
+    console.log(episode.license)
     const licenseLowerDash = episode.license.replace(/\s+/g, '-').toLowerCase()
     const licenseUpperUnderscore = episode.license
       .replace(/\s+/g, '_')
