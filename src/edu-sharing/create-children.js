@@ -4,6 +4,7 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
+const { ESError, ESPostError } = require('../models/errors')
 
 async function createChildren(ocInstance, episodesData, seriesData, authObj) {
   logger.Info('[ES API] Creating children per episode for ' + ocInstance)
@@ -12,7 +13,11 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     .then(async (res) => {
       return episodesData
     })
-    .catch((error) => logger.Error(error.message))
+    .catch((error) => {
+      if (error instanceof ESError) {
+        throw error
+      } else throw new ESError('[ES API] Error while creating children: ' + error.message)
+    })
 
   async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
@@ -29,7 +34,9 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
             getHeadersCreateFolder(authObj),
             i
           ).catch((error) => {
-            return error
+            if (error instanceof ESPostError) {
+              throw error
+            } else throw new ESError('[ES API] Error while creating children: ' + error.message)
           })
         )
       )
@@ -47,7 +54,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
         }
       })
       .catch((error) => {
-        logger.Error('[ES API] ' + error)
+        throw new ESPostError(error.message, error.code)
       })
   }
 

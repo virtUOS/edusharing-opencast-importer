@@ -92,8 +92,7 @@ function updateMetadata(data) {
   } else if (metadataIndex > 0) {
     data = moveObjToFirstPosition(data, metadataIndex)
   }
-  console.log('HERE')
-  console.log(data[0])
+
   return setMetadataDates(data)
 }
 

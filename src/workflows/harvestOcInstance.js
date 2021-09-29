@@ -1,7 +1,6 @@
 'use strict'
 require('dotenv').config()
 require('axios-debug-log')
-const { NoSavedDataError } = require('../models/errors')
 const logger = require('node-file-logger')
 const CONF = require('../config/config')
 
@@ -15,6 +14,7 @@ const esFolders = require('../edu-sharing/create-folder-structure')
 const esChildren = require('../edu-sharing/create-children')
 const esMetadata = require('../edu-sharing/update-metadata')
 const esPermissions = require('../edu-sharing/update-permissions')
+const { NoSavedDataError } = require('../models/errors')
 
 async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   const ocInstance = ocInstanceObj.domain
@@ -34,13 +34,15 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     const loadedData = await Promise.allSettled(dataPromises)
     ocEpisodes = loadedData[0].status === 'fulfilled' ? loadedData[0].value : []
     ocSeries = loadedData[1].status === 'fulfilled' ? loadedData[1].value : []
-    seriesData = loadedData[2].status === 'fulfilled' ? loadedData[2].value : []
-    episodesData = loadedData[3].status === 'fulfilled' ? loadedData[3].value : []
+    episodesData = loadedData[2].status === 'fulfilled' ? loadedData[2].value : []
+    seriesData = loadedData[3].status === 'fulfilled' ? loadedData[3].value : []
 
     for (const data in loadedData) {
       if (loadedData[data].status === 'rejected') {
         if (loadedData[data].reason instanceof NoSavedDataError) {
           logger.Info(loadedData[data].reason.message)
+        } else {
+          throw loadedData[data].reason
         }
       }
     }
@@ -80,6 +82,7 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
       ocInstance,
       seriesData
     )
+
     episodesData = await sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
     storeData()
 
@@ -94,8 +97,8 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     storeData()
 
     await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
-
     storeData()
+
     logger.Info('[Harvest] Finished')
   } catch (error) {
     logger.Error(error.message)

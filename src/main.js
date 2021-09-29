@@ -11,6 +11,10 @@
   logger.Info('[App] Started')
 
   for (let i = 0; i < CONF.oc.instances.length; i++) {
-    await harvester.harvestOcInstance(CONF.oc.instances[i], CONF.oc.forceUpdate)
+    try {
+      await harvester.harvestOcInstance(CONF.oc.instances[i], CONF.oc.forceUpdate)
+    } catch (error) {
+      logger.Error(error.message)
+    }
   }
 })()

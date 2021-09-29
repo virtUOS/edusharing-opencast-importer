@@ -4,23 +4,26 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
+const { ESError, ESPostError } = require('../models/errors')
 
 async function updateMetadata(ocInstance, episodesData, authObj) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
-
   return await returnReqsAsPromiseArray(authObj, episodesData)
     .then(async (res) => {
       return episodesData
     })
-    .catch((error) => logger.Error(error.message))
+    .catch((error) => {
+      if (error instanceof ESError) {
+        throw error
+      } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
+    })
 
   async function returnReqsAsPromiseArray(authObj, episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
-      // console.log(episodesData[0])
-      if (episodesData[i].nodeId) continue
+      if (!episodesData[i].nodeId) continue
 
       requests.push(
         limit(() =>
@@ -30,7 +33,9 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
             getHeadersUpdateMetadata(authObj),
             i
           ).catch((error) => {
-            return error
+            if (error instanceof ESPostError) {
+              throw error
+            } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
           })
         )
       )
@@ -48,7 +53,7 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
         }
       })
       .catch((error) => {
-        logger.Error('[ES API] ' + error)
+        throw new ESPostError(error.message, error.code)
       })
   }
 
@@ -64,7 +69,6 @@ async function updateMetadata(ocInstance, episodesData, authObj) {
   }
   // {"ccm:commonlicense_key":["PDM"],"ccm:questionsallowed":[true],"ccm:author_freetext":[""],"ccm:lifecyclecontributer_author":[null]}
   function getBodyUpdateMetadata(episode) {
-    console.log(episode.license)
     const licenseLowerDash = episode.license.replace(/\s+/g, '-').toLowerCase()
     const licenseUpperUnderscore = episode.license
       .replace(/\s+/g, '_')
