@@ -3,6 +3,7 @@
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
+const { ESAuthError } = require('../models/errors')
 
 async function getEsAuth() {
   let authObj = { type: '', token_access: '' }
@@ -43,7 +44,7 @@ async function sendPostRequest(url, body, authObj) {
     })
     .catch((error) => {
       if (error.code === 'ECONNREFUSED') return createBasicAuthToken(authObj)
-      logger.Error('[Auth] ' + error)
+      throw new ESAuthError(error.message)
     })
 }
 
@@ -79,7 +80,7 @@ function createBasicAuthToken(authObj) {
     authObj.type = 'Basic'
     authObj.token_access = getBasicAuthBase64String(process.env.ES_USER, process.env.ES_PASSWORD)
   } catch (error) {
-    logger.Error('[Auth] ' + error)
+    throw new ESAuthError(error.message)
   }
   return authObj
 }

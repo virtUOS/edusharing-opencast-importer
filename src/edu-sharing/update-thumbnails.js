@@ -5,6 +5,7 @@ const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
 const FormData = require('form-data')
+const { ESError, ESPostError } = require('../models/errors')
 
 async function updateThumbnails(ocInstance, episodesData, authObj) {
   logger.Info('[ES API] Update episodes thumbnails for ' + ocInstance)
@@ -14,7 +15,9 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
       return episodesData
     })
     .catch((error) => {
-      return error
+      if (error instanceof ESError) {
+        throw error
+      } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
     })
 
   async function returnReqsAsPromiseArray(authObj, episodesData) {
@@ -36,7 +39,9 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
             getHeadersUpdateThumbnail(authObj, formData),
             i
           ).catch((error) => {
-            return error
+            if (error instanceof ESPostError) {
+              throw error
+            } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
           })
         )
       )
@@ -54,7 +59,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
         }
       })
       .catch((error) => {
-        return error
+        throw new ESPostError(error.message, error.code)
       })
   }
 
@@ -80,7 +85,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
         }
       })
       .catch((error) => {
-        return error.response.status
+        throw new ESError(error.message, error.code)
       })
   }
 

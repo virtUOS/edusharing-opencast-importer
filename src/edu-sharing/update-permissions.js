@@ -4,6 +4,7 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
+const { ESError, ESPostError } = require('../models/errors')
 
 async function updatePermissions(ocInstance, episodesData, authObj) {
   logger.Info('[ES API] Update permissions (public) per episode for ' + ocInstance)
@@ -12,7 +13,11 @@ async function updatePermissions(ocInstance, episodesData, authObj) {
     .then(async (res) => {
       return episodesData
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => {
+      if (error instanceof ESError) {
+        throw error
+      } else throw new ESError('[ES API] Error while updating permissions: ' + error.message)
+    })
 
   async function returnReqsAsPromiseArray(authObj, episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
@@ -30,7 +35,9 @@ async function updatePermissions(ocInstance, episodesData, authObj) {
             getHeadersUpdatePermissions(authObj),
             i
           ).catch((error) => {
-            logger.Error(error)
+            if (error instanceof ESPostError) {
+              throw error
+            } else throw new ESError('[ES API] Error while updating permissions: ' + error.message)
           })
         )
       )
@@ -48,7 +55,7 @@ async function updatePermissions(ocInstance, episodesData, authObj) {
         }
       })
       .catch((error) => {
-        logger.Error('[ES API] ' + error)
+        throw new ESPostError(error.message, error.code)
       })
   }
 
