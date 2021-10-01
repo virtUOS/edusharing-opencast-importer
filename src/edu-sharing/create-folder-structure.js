@@ -4,10 +4,10 @@ const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
 const pLimit = require('p-limit')
+const { ESError, ESPostError } = require('../models/errors')
 
 async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
-
   const modifiedSeriesData = seriesData
   const headers = getHeadersCreateFolder(authObj)
   const requests = []
@@ -42,15 +42,19 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     })
     .then((res) => {
       return Promise.all(requests).then((res) => {
-        if (res.code === 'ECONNREFUSED') {
-          logger.Error(
-            '[ES API] ' + CONF.es.protocol + '://' + CONF.es.domain + ' is not reachable - skipping'
-          )
-        }
         return modifiedSeriesData
       })
     })
-    .catch((err) => logger.Error('[ES API] ' + err))
+    .catch((error) => {
+      if (error instanceof ESPostError && error.code === 'ECONNREFUSED') {
+        logger.Error(error.message)
+        return modifiedSeriesData
+      } else if (error instanceof ESError) {
+        throw error
+      } else {
+        throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
+      }
+    })
 
   async function createMainFolder(ocInstance) {
     if (modifiedSeriesData[0].type === 'metadata' && !modifiedSeriesData[0].nodeId) {
@@ -60,8 +64,10 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         headers,
         ocInstance,
         0
-      ).catch((err) => {
-        return err
+      ).catch((error) => {
+        if (error instanceof ESPostError) {
+          throw error
+        } else throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
       })
     }
   }
@@ -76,10 +82,17 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
       })
       .catch((error) => {
         if (error.code === 'ECONNREFUSED') {
-          return error.code
+          throw new ESPostError(
+            '[ES API] ' +
+              CONF.es.protocol +
+              '://' +
+              CONF.es.domain +
+              ' is not reachable - skipping',
+            error.code
+          )
         }
         if (error.response.status === 409) return true
-        logger.Error('[ES API] ' + error)
+        throw new ESPostError(error.message, error.code)
       })
   }
 
