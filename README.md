@@ -35,9 +35,11 @@ ES_USER=opencast
 ES_PASSWORD=opencast
 ```
 4. Rename `config.oc-instances.js.template` to `config.oc-instances.js` in folder `./src/config/`
-5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (protocal, domain). <br /><strong>LIMITATION: Currently, only the first object in the instance array is used..</strong>
+5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes.<br />
 ```js
 {
+  orgName: 'Opencast',
+  orgUrl: 'https://opencast.org',
   protocol: 'https',
   domain: 'develop.opencast.org'
 }
@@ -65,7 +67,8 @@ Will be added later.
 5. Create folder structure in Edu-Sharing user workspace (a folder for every Opencast series)
 6. Create a node/children for every episode (Alfresco API)
 7. Update metadata for all nodes/childrens
-8. Set permissions for all nodes/childrens to public
+8. Update thumbnails/preview images for episodes nodes/children
+9. Set permissions for all nodes/childrens to public
 
 ## Develop
 
@@ -94,10 +97,6 @@ npm run lint:fix
 
 * www: [virtuos.uni-osnabrueck.de](https://virtuos.uni-osnabrueck.de/)
 * Github: [@virtUOS](https://github.com/virtUOS)
-
-👤 **Florian Feyen**
-
-* Github: [@ffeyen](https://github.com/ffeyen)
 
 ## 🤝 Contributing
 
