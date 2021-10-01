@@ -15,12 +15,13 @@ config.es = {
   routes: {
     api: '/edu-sharing/rest/node/v1/nodes',
     oauth: '/edu-sharing/oauth2/token',
-    baseFolder: '/-home-'
+    baseFolder: '/-home-',
+    defaultThumbnail: '/edu-sharing/themes/default/images/common/mime-types/previews/link.svg'
   }
 }
 
 config.oc = {
-  forceUpdate: true,
+  forceUpdate: false,
   instances: ocInstances,
   settings: {
     maxPendingPromises: 2,
