@@ -5,9 +5,9 @@ const CONF = require('../config/config.js')
 const axios = require('axios').default
 const { ESAuthError } = require('../models/errors')
 
-async function getEsAuth() {
-  let authObj = { type: '', token_access: '' }
+let authObj = { type: '', token_access: '' }
 
+async function initEsAuth() {
   if (process.env.ES_CLIENT_ID && process.env.ES_CLIENT_SECRET) {
     authObj = await createBearerAuthToken(authObj)
   } else if (process.env.ES_USER && process.env.ES_PASSWORD) {
@@ -18,8 +18,6 @@ async function getEsAuth() {
         'Please add ES_USER and ES_PASSWORD to .env file.'
     )
   }
-
-  return authObj
 }
 
 async function createBearerAuthToken(authObj) {
@@ -43,9 +41,12 @@ async function sendPostRequest(url, body, authObj) {
       if (response.status === 200) return handlePostRequestOauth(response, authObj)
     })
     .catch((error) => {
-      console.log(error)
+      logger.Error(
+        '[ES AUTH] Could not create bearer token (' +
+          error.message +
+          ') Retrying with basic token...'
+      )
       return createBasicAuthToken(authObj)
-      // throw new ESAuthError(error.message)
     })
 }
 
@@ -90,6 +91,7 @@ async function createBasicAuthToken(authObj) {
 
 async function checkEsAuthExpiration(authObj) {
   const url = CONF.es.host.url + CONF.es.routes.validation
+
   const headers = {
     Accept: 'application/json',
     'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
@@ -101,6 +103,7 @@ async function checkEsAuthExpiration(authObj) {
     Pragma: 'no-cache',
     'Cache-Control': 'no-cache'
   }
+
   return await axios
     .get(url, { headers })
     .then(async (response) => {
@@ -109,9 +112,10 @@ async function checkEsAuthExpiration(authObj) {
         throw new ESAuthError('Invalid username or password')
       } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Bearer') {
         console.log('Refreshing TOKEN')
-        return await refreshOAuth(authObj)
+        authObj = await refreshOAuth(authObj)
       } else if (statusCode === 'OK') {
-        return authObj
+        // nothing to do
+        // return authObj
       } else {
         throw new ESAuthError(response.statusCode)
       }
@@ -145,6 +149,7 @@ async function refreshOAuth(authObj) {
 }
 
 module.exports = {
-  getEsAuth,
-  checkEsAuthExpiration
+  initEsAuth,
+  checkEsAuthExpiration,
+  authObj
 }

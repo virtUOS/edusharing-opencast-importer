@@ -2,11 +2,12 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
+const { authObj } = require('../edu-sharing/get-auth-token')
 
-async function updatePermissions(ocInstance, episodesData, authObj) {
+async function updatePermissions(ocInstance, episodesData) {
   logger.Info('[ES API] Update permissions (public) per episode for ' + ocInstance)
 
   return await returnReqsAsPromiseArray(authObj, episodesData)
@@ -47,7 +48,7 @@ async function updatePermissions(ocInstance, episodesData, authObj) {
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
