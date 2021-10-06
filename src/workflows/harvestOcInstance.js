@@ -87,6 +87,13 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     storeData()
 
     authObj = await esAuth.getEsAuth()
+    console.log('BEFOREEEE\n')
+    console.log(authObj)
+    await new Promise((resolve) => setTimeout(resolve, 3610))
+    authObj = await esAuth.checkEsAuthExpiration(authObj)
+    console.log('SUCESSSSSSSSSS\n')
+    console.log(authObj)
+
     seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
     storeData()
 

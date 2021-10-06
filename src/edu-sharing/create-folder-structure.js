@@ -9,6 +9,7 @@ const { ESError, ESPostError } = require('../models/errors')
 async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
   const modifiedSeriesData = seriesData
+  authObj.token_access = 'AWDWD'
   const headers = getHeadersCreateFolder(authObj)
   const requests = []
 
