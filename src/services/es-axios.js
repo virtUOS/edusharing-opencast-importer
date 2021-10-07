@@ -1,18 +1,19 @@
 const axios = require('axios')
 const esAuth = require('../edu-sharing/get-auth-token')
 const { authObj } = require('../edu-sharing/get-auth-token')
+const { ESError, ESAuthError } = require('../models/errors')
 
 const esAxios = axios.create()
 
 function initEsAxios() {
-  // Interceptor to use newest auth-token
+  // Interceptor to use and inject newest auth-token
   esAxios.interceptors.request.use(
     (config) => {
       config.headers.Authorization = authObj.type + ' ' + authObj.token_access
       return config
     },
     (error) => {
-      Promise.reject(error)
+      throw new ESError('[ES API] Error while configuring header ( ' + error.message + ' )')
     }
   )
 
@@ -25,11 +26,13 @@ function initEsAxios() {
       const originalRequest = error.config
       if (error.response.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true
-        await esAuth.checkEsAuthExpiration(authObj)
+        await esAuth.checkEsAuthExpiration()
         originalRequest.headers.Authorization = authObj.type + ' ' + authObj.token_access
         return axios(originalRequest)
+      } else if (error.response.status === 401) {
+        throw new ESAuthError('Invalid credentials')
       } else {
-        return Promise.reject(error)
+        throw new ESAuthError(error.response.message)
       }
     }
   )

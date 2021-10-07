@@ -6,12 +6,10 @@ const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
 
-const { authObj } = require('../edu-sharing/get-auth-token')
-
 async function createFolderForOcInstances(ocInstance, seriesData) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
   const modifiedSeriesData = seriesData
-  const headers = getHeadersCreateFolder(authObj)
+  const headers = getHeadersCreateFolder()
   const requests = []
 
   return await createMainFolder(ocInstance)
@@ -59,7 +57,6 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     })
 
   async function createMainFolder(ocInstance) {
-    console.log('yooooooooooo ' + modifiedSeriesData[0].nodeId)
     if (modifiedSeriesData[0].type === 'metadata' && !modifiedSeriesData[0].nodeId) {
       return await sendPostRequest(
         getUrlCreateFolder(),
@@ -108,7 +105,7 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
       return addNodeIdToSeries(res.data.node, index)
     }
   }
-  // Das ist das Problem
+
   function addMetadataToSeriesData(response) {
     if (modifiedSeriesData[0].type === 'metadata') {
       modifiedSeriesData[0].nodeId = response.ref.id
@@ -150,7 +147,7 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',

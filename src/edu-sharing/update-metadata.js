@@ -5,11 +5,10 @@ const CONF = require('../config/config.js')
 const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
-const { authObj } = require('../edu-sharing/get-auth-token')
 
 async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
-  return await returnReqsAsPromiseArray(authObj, episodesData)
+  return await returnReqsAsPromiseArray(episodesData)
     .then(async (res) => {
       return episodesData
     })
@@ -19,7 +18,7 @@ async function updateMetadata(ocInstance, episodesData) {
       } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
     })
 
-  async function returnReqsAsPromiseArray(authObj, episodesData) {
+  async function returnReqsAsPromiseArray(episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
@@ -31,7 +30,7 @@ async function updateMetadata(ocInstance, episodesData) {
           sendPostRequest(
             getUrlUpdateMetadata(episodesData[i]),
             getBodyUpdateMetadata(episodesData[i]),
-            getHeadersUpdateMetadata(authObj),
+            getHeadersUpdateMetadata(),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
@@ -158,7 +157,7 @@ async function updateMetadata(ocInstance, episodesData) {
     }).toString()
   }
 
-  function getHeadersUpdateMetadata(authObj) {
+  function getHeadersUpdateMetadata() {
     return {
       headers: {
         Accept: 'application/json',
@@ -166,7 +165,6 @@ async function updateMetadata(ocInstance, episodesData) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'

@@ -76,8 +76,6 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
       ocInstanceObj
     )
 
-    // console.log(seriesData)
-
     seriesData = await sorter.getSortedEpisodesPerSeriesIds(
       ocSeries,
       ocEpisodes,
@@ -90,10 +88,9 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
 
     await esAuth.initEsAuth()
     await esAxiosService.initEsAxios()
-    console.log(seriesData)
+
     seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData)
     storeData()
-    console.log(seriesData)
 
     episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData)
     storeData()

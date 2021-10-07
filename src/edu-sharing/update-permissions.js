@@ -5,12 +5,11 @@ const CONF = require('../config/config.js')
 const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
-const { authObj } = require('../edu-sharing/get-auth-token')
 
 async function updatePermissions(ocInstance, episodesData) {
   logger.Info('[ES API] Update permissions (public) per episode for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(authObj, episodesData)
+  return await returnReqsAsPromiseArray(episodesData)
     .then(async (res) => {
       return episodesData
     })
@@ -20,7 +19,7 @@ async function updatePermissions(ocInstance, episodesData) {
       } else throw new ESError('[ES API] Error while updating permissions: ' + error.message)
     })
 
-  async function returnReqsAsPromiseArray(authObj, episodesData) {
+  async function returnReqsAsPromiseArray(episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
@@ -33,7 +32,7 @@ async function updatePermissions(ocInstance, episodesData) {
           sendPostRequest(
             getUrlUpdatePermissions(episodesData[i]),
             getBodyUpdatePermissions(episodesData[i]),
-            getHeadersUpdatePermissions(authObj),
+            getHeadersUpdatePermissions(),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
@@ -86,7 +85,7 @@ async function updatePermissions(ocInstance, episodesData) {
     }).toString()
   }
 
-  function getHeadersUpdatePermissions(authObj) {
+  function getHeadersUpdatePermissions() {
     return {
       headers: {
         Accept: 'application/json',
@@ -94,7 +93,6 @@ async function updatePermissions(ocInstance, episodesData) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'

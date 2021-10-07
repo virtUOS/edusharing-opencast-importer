@@ -89,7 +89,7 @@ async function createBasicAuthToken(authObj) {
   return authObj
 }
 
-async function checkEsAuthExpiration(authObj) {
+async function checkEsAuthExpiration() {
   const url = CONF.es.host.url + CONF.es.routes.validation
 
   const headers = {
@@ -108,14 +108,12 @@ async function checkEsAuthExpiration(authObj) {
     .get(url, { headers })
     .then(async (response) => {
       const statusCode = response.data.statusCode
-      if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Basic') {
+      if (statusCode === 'OK') {
+        return true
+      } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Basic') {
         throw new ESAuthError('Invalid username or password')
       } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Bearer') {
-        console.log('Refreshing TOKEN')
         authObj = await refreshOAuth(authObj)
-      } else if (statusCode === 'OK') {
-        // nothing to do
-        // return authObj
       } else {
         throw new ESAuthError(response.statusCode)
       }
