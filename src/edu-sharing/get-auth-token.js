@@ -9,9 +9,9 @@ let authObj = { type: '', token_access: '' }
 
 async function initEsAuth() {
   if (process.env.ES_CLIENT_ID && process.env.ES_CLIENT_SECRET) {
-    authObj = await createBearerAuthToken(authObj)
+    await createBearerAuthToken()
   } else if (process.env.ES_USER && process.env.ES_PASSWORD) {
-    authObj = createBasicAuthToken(authObj)
+    await createBasicAuthToken()
   } else {
     logger.Error(
       '[Auth] No Edu-Sharing credentials found. ' +
@@ -20,7 +20,7 @@ async function initEsAuth() {
   }
 }
 
-async function createBearerAuthToken(authObj) {
+async function createBearerAuthToken() {
   authObj.type = 'Bearer'
 
   const body = getBodyOauth(
@@ -31,14 +31,14 @@ async function createBearerAuthToken(authObj) {
   )
   const url = getUrlOauth()
 
-  return await sendPostRequest(url, body, authObj)
+  return await sendPostRequest(url, body)
 }
 
-async function sendPostRequest(url, body, authObj) {
+async function sendPostRequest(url, body) {
   return await axios
     .post(url, body)
     .then((response) => {
-      if (response.status === 200) return handlePostRequestOauth(response, authObj)
+      if (response.status === 200) return handlePostRequestOauth(response)
     })
     .catch((error) => {
       logger.Error(
@@ -46,7 +46,7 @@ async function sendPostRequest(url, body, authObj) {
           error.message +
           ') Retrying with basic token...'
       )
-      return createBasicAuthToken(authObj)
+      return createBasicAuthToken()
     })
 }
 
@@ -68,16 +68,14 @@ function getBodyOauth(esClientId, esClientSecret, esUser, esPassword) {
   )
 }
 
-function handlePostRequestOauth(res, authObj) {
+function handlePostRequestOauth(res) {
   if (res.data.access_token) authObj.token_access = res.data.access_token
   if (res.data.refresh_token) authObj.token_refresh = res.data.refresh_token
   if (res.data.expires_in) authObj.token_expires_in = res.data.expires_in
   authObj.token_created = new Date()
-
-  return authObj
 }
 
-async function createBasicAuthToken(authObj) {
+async function createBasicAuthToken() {
   authObj = { type: '', token_access: '' }
   try {
     authObj.type = 'Basic'
@@ -86,7 +84,6 @@ async function createBasicAuthToken(authObj) {
   } catch (error) {
     throw new ESAuthError(error.message)
   }
-  return authObj
 }
 
 async function checkEsAuthExpiration() {
@@ -113,7 +110,7 @@ async function checkEsAuthExpiration() {
       } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Basic') {
         throw new ESAuthError('Invalid username or password')
       } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Bearer') {
-        authObj = await refreshOAuth(authObj)
+        await refreshOAuth()
       } else {
         throw new ESAuthError(response.statusCode)
       }
@@ -127,7 +124,7 @@ function getBasicAuthBase64String(esUser, esPassword) {
   return Buffer.from(esUser + ':' + esPassword).toString('base64')
 }
 
-function getBodyOauthRefresh(authObj) {
+function getBodyOauthRefresh() {
   return (
     'grant_type=refresh_token&' +
     'client_id=' +
@@ -139,11 +136,11 @@ function getBodyOauthRefresh(authObj) {
   )
 }
 
-async function refreshOAuth(authObj) {
+async function refreshOAuth() {
   const url = getUrlOauth()
-  const body = getBodyOauthRefresh(authObj)
+  const body = getBodyOauthRefresh()
 
-  return await sendPostRequest(url, body, authObj)
+  return await sendPostRequest(url, body)
 }
 
 module.exports = {
