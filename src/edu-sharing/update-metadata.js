@@ -69,12 +69,17 @@ async function updateMetadata(ocInstance, episodesData) {
   }
 
   function getBodyUpdateMetadata(episode) {
-    const licenseUpperUnderscore = episode.license
-      .replace(/\s+/g, '_')
-      .replace(/-/g, '_')
-      .toUpperCase()
+    const licenseUpperUnderscore = episode.license.replace(/\s+/g, '-').toUpperCase()
+
+    const filename = `${episode.id}-${episode.title
+      .replace(/\s+/g, '-')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[(),!?=:;/]/g, '')
+      .toLowerCase()
+      .substring(0, 40)}`
 
     return JSON.stringify({
+      'cm:name': [filename],
       'ccm:original': [episode.nodeId],
       'sys:node-uuid': [episode.nodeId],
       'cclom:title': [episode.title],

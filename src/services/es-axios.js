@@ -31,6 +31,8 @@ function initEsAxios() {
         return axios(originalRequest)
       } else if (error.response.status === 401) {
         throw new ESAuthError('Invalid credentials')
+      } else if (error.response.status === 409) {
+        console.log('BLA')
       } else {
         throw new ESAuthError(error.response.message)
       }

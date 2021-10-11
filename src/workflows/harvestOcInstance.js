@@ -104,14 +104,14 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
 
     episodesData = await esMetadata.updateMetadata(ocInstance, episodesData)
     storeData()
-    
+
     episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData)
-    
+
     await esPermissions.updatePermissions(ocInstance, episodesData)
 
     storeData()
 
-    logger.Info('[Harvest] Finished')
+    logger.Info('[Harvest] Finished ' + ocInstance)
   } catch (error) {
     logger.Error(error.message)
   }

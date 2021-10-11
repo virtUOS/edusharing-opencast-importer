@@ -2,15 +2,15 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const FormData = require('form-data')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function updateThumbnails(ocInstance, episodesData, authObj) {
+async function updateThumbnails(ocInstance, episodesData) {
   logger.Info('[ES API] Update episodes thumbnails for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(authObj, episodesData)
+  return await returnReqsAsPromiseArray(episodesData)
     .then(async (res) => {
       return episodesData
     })
@@ -20,7 +20,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
       } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
     })
 
-  async function returnReqsAsPromiseArray(authObj, episodesData) {
+  async function returnReqsAsPromiseArray(episodesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
@@ -36,7 +36,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
           sendPostRequest(
             getUrlUpdateThumbnail(episodesData[i]),
             formData,
-            getHeadersUpdateThumbnail(authObj, formData),
+            getHeadersUpdateThumbnail(formData),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
@@ -51,7 +51,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
@@ -75,7 +75,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
   }
 
   async function requestThumbnail(episode) {
-    return await axios
+    return await esAxios
       .get(episode.previewPlayer, { responseType: 'stream' })
       .then(async (response) => {
         if (response.status === 200) {
@@ -89,7 +89,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
       })
   }
 
-  function getHeadersUpdateThumbnail(authObj, formData) {
+  function getHeadersUpdateThumbnail(formData) {
     return {
       headers: {
         Accept: 'application/json',
@@ -97,7 +97,6 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'
