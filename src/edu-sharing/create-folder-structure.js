@@ -37,7 +37,6 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         }
 
         if (foundDir === false) {
-          // if (modifiedSeriesData[i].nodeId) continue
           if (modifiedSeriesData[i].type === 'metadata') continue
           requests.push(
             limit(() =>

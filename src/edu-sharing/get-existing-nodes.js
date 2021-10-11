@@ -31,6 +31,7 @@ async function checkExistingDirs(ocInstance, authObj) {
           // safe info
           esDirectories = node
         }
+        console.log(response.data)
       })
 
       // get all existing subdirectories + nodeIDs
@@ -52,10 +53,11 @@ async function checkExistingDirs(ocInstance, authObj) {
     })
     .catch((err) => {
       // if ocInstance directory does not exist
-      if (err.response.status === 404) {
-        return esDirectories
-      }
-      logger.Error('[ES API] ' + err)
+      console.log(err)
+      // if (err.response.status === 404) {
+      return esDirectories
+      // }
+      // logger.Error('[ES API] ' + err)
     })
   return esDirectories
 }
