@@ -3,6 +3,7 @@ const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
+const { OCError, OCGetError } = require('../models/errors')
 
 async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
   if (force) logger.Info('[OC Episodes] Force episodes GET requests for ' + ocInstance)
@@ -45,7 +46,9 @@ async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
       .then((response) => {
         return response.data['search-results']
       })
-      .catch((error) => logger.Error(error))
+      .catch((error) => {
+        throw new OCGetError(error.message, error.code)
+      })
   }
 
   async function handleResponse(data) {
@@ -76,7 +79,13 @@ async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
                 return await handleResponse(data)
               }
             })
-            .catch((error) => logger.Error(error))
+            .catch((error) => {
+              if (error instanceof OCGetError) {
+                throw error
+              } else {
+                throw new OCError('[OC API] Error while receiving episode data: ' + error.message)
+              }
+            })
         )
       )
     }
@@ -97,7 +106,11 @@ async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
       if (episodes.length < 1) logger.Info('[OC Episodes] No public episodes found: ' + ocInstance)
       return episodes
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => {
+      if (error instanceof OCError) {
+        throw error
+      } else throw new OCError('[OC API] Error while receiving episode data: ' + error.message)
+    })
 }
 
 module.exports.start = start

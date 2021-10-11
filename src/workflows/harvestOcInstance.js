@@ -14,6 +14,7 @@ const esFolders = require('../edu-sharing/create-folder-structure')
 const esChildren = require('../edu-sharing/create-children')
 const esMetadata = require('../edu-sharing/update-metadata')
 const esPermissions = require('../edu-sharing/update-permissions')
+const { NoSavedDataError } = require('../models/errors')
 
 async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   const ocInstance = ocInstanceObj.domain
@@ -24,10 +25,27 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   let authObj
 
   async function initStoredData() {
-    ocEpisodes = (await storage.loadData(CONF.oc.filenames.episodes, ocInstance)) || []
-    ocSeries = (await storage.loadData(CONF.oc.filenames.series, ocInstance)) || []
-    episodesData = (await storage.loadData(CONF.oc.filenames.episodesData, ocInstance)) || []
-    seriesData = (await storage.loadData(CONF.oc.filenames.seriesData, ocInstance)) || []
+    const dataPromises = [
+      storage.loadData(CONF.oc.filenames.episodes, ocInstance),
+      storage.loadData(CONF.oc.filenames.series, ocInstance),
+      storage.loadData(CONF.oc.filenames.episodesData, ocInstance),
+      storage.loadData(CONF.oc.filenames.seriesData, ocInstance)
+    ]
+    const loadedData = await Promise.allSettled(dataPromises)
+    ocEpisodes = loadedData[0].status === 'fulfilled' ? loadedData[0].value : []
+    ocSeries = loadedData[1].status === 'fulfilled' ? loadedData[1].value : []
+    episodesData = loadedData[2].status === 'fulfilled' ? loadedData[2].value : []
+    seriesData = loadedData[3].status === 'fulfilled' ? loadedData[3].value : []
+
+    for (const data in loadedData) {
+      if (loadedData[data].status === 'rejected') {
+        if (loadedData[data].reason instanceof NoSavedDataError) {
+          logger.Info(loadedData[data].reason.message)
+        } else {
+          throw loadedData[data].reason
+        }
+      }
+    }
   }
 
   async function storeData() {
@@ -37,60 +55,54 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     storage.storeData(CONF.oc.filenames.seriesData, seriesData, ocInstance)
   }
 
-  return new Promise((resolve, reject) => {
-    initStoredData().then(() => {
-      logger.Info(`[Harvest] Import Opencast content from ${ocInstance} to ${CONF.es.host.domain}`)
-      getAllPublishedEpisodes
-        .start(ocEpisodes, forceUpdate, ocInstance, ocInstanceObj)
-        .then(async (episodes) => {
-          ocEpisodes = filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
-          return await getSeriesIdsFromEpisodes.start(
-            ocEpisodes,
-            ocSeries,
-            forceUpdate,
-            ocInstance,
-            ocInstanceObj
-          )
-        })
-        .then(async (series) => {
-          ocSeries = series
-          seriesData = sorter.getSortedEpisodesPerSeriesIds(
-            ocSeries,
-            ocEpisodes,
-            ocInstance,
-            seriesData
-          )
-          episodesData = sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
-          storeData()
-          return await esAuth.getEsAuth()
-        })
-        .then(async (auth) => {
-          authObj = auth
-          return await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
-        })
-        .then(async (data) => {
-          seriesData = data
-          storeData()
-          return await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
-        })
-        .then(async (data) => {
-          episodesData = data
-          storeData()
-          return await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
-        })
-        .then(async (data) => {
-          episodesData = data
-          storeData()
-          return await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
-        })
-        .then((res) => {
-          storeData()
-          logger.Info('[Harvest] Finished')
-          resolve()
-        })
-        .catch((error) => logger.Error(error))
-    })
-  })
+  try {
+    await initStoredData()
+
+    logger.Info(`[Harvest] Import Opencast content from ${ocInstance} to ${CONF.es.host.domain}`)
+
+    const episodes = await getAllPublishedEpisodes.start(
+      ocEpisodes,
+      forceUpdate,
+      ocInstance,
+      ocInstanceObj
+    )
+
+    ocEpisodes = await filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
+    ocSeries = await getSeriesIdsFromEpisodes.start(
+      ocEpisodes,
+      ocSeries,
+      forceUpdate,
+      ocInstance,
+      ocInstanceObj
+    )
+
+    seriesData = await sorter.getSortedEpisodesPerSeriesIds(
+      ocSeries,
+      ocEpisodes,
+      ocInstance,
+      seriesData
+    )
+
+    episodesData = await sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
+    storeData()
+
+    authObj = await esAuth.getEsAuth()
+    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
+    storeData()
+
+    episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
+    storeData()
+
+    episodesData = await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
+    storeData()
+
+    await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
+    storeData()
+
+    logger.Info('[Harvest] Finished')
+  } catch (error) {
+    logger.Error(error.message)
+  }
 }
 
 module.exports = {
