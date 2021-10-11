@@ -10,6 +10,7 @@ const getSeriesIdsFromEpisodes = require('../opencast/get-series-from-episodes')
 const sorter = require('../services/sorter')
 const filter = require('../services/filter-episodes')
 const esAuth = require('../edu-sharing/get-auth-token')
+const esAxiosService = require('../services/es-axios')
 const esFolders = require('../edu-sharing/create-folder-structure')
 const esChildren = require('../edu-sharing/create-children')
 const esMetadata = require('../edu-sharing/update-metadata')
@@ -23,7 +24,6 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   let ocSeries
   let seriesData
   let episodesData
-  let authObj
 
   async function initStoredData() {
     const dataPromises = [
@@ -93,19 +93,22 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     )
     storeData()
 
-    authObj = await esAuth.getEsAuth()
-    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
+    await esAuth.initEsAuth()
+    await esAxiosService.initEsAxios()
+
+    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData)
     storeData()
 
-    episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
+    episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData)
     storeData()
 
-    episodesData = await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
+    episodesData = await esMetadata.updateMetadata(ocInstance, episodesData)
     storeData()
+    
+    episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData)
+    
+    await esPermissions.updatePermissions(ocInstance, episodesData)
 
-    episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData, authObj)
-
-    await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
     storeData()
 
     logger.Info('[Harvest] Finished')

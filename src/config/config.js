@@ -15,7 +15,8 @@ config.es = {
   routes: {
     api: '/edu-sharing/rest/node/v1/nodes',
     oauth: '/edu-sharing/oauth2/token',
-    baseFolder: '/-home-'
+    baseFolder: '/-home-',
+    validation: '/edu-sharing/rest/authentication/v1/validateSession'
   }
 }
 

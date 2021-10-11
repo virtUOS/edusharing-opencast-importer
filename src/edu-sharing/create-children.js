@@ -2,14 +2,14 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function createChildren(ocInstance, episodesData, seriesData, authObj) {
+async function createChildren(ocInstance, episodesData, seriesData) {
   logger.Info('[ES API] Creating children per episode for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(authObj, episodesData, seriesData)
+  return await returnReqsAsPromiseArray(episodesData, seriesData)
     .then(async (res) => {
       return episodesData
     })
@@ -19,7 +19,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
       } else throw new ESError('[ES API] Error while creating children: ' + error.message)
     })
 
-  async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
+  async function returnReqsAsPromiseArray(episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
@@ -31,7 +31,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
           sendPostRequest(
             getUrlCreateChildren(episodesData[i], seriesData),
             getBodyCreateFolder(episodesData[i].url),
-            getHeadersCreateFolder(authObj),
+            getHeadersCreateFolder(),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
@@ -46,7 +46,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
@@ -95,7 +95,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',
@@ -103,7 +103,6 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'

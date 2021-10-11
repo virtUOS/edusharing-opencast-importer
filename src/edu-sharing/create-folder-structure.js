@@ -2,14 +2,14 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
+async function createFolderForOcInstances(ocInstance, seriesData) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
   const modifiedSeriesData = seriesData
-  const headers = getHeadersCreateFolder(authObj)
+  const headers = getHeadersCreateFolder()
   const requests = []
 
   return await createMainFolder(ocInstance)
@@ -17,10 +17,10 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
       if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
-
       for (let i = 1; i < modifiedSeriesData.length; i++) {
         if (modifiedSeriesData[i].nodeId) continue
         if (modifiedSeriesData[i].type === 'metadata') continue
+
         requests.push(
           limit(() =>
             sendPostRequest(
@@ -73,7 +73,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   }
 
   async function sendPostRequest(url, body, headers, ocInstance, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
@@ -147,7 +147,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',
@@ -155,7 +155,6 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'
