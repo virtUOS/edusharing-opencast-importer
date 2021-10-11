@@ -55,7 +55,7 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
-          return handleResponse(index)
+          return true
         }
       })
       .catch((error) => {
@@ -104,8 +104,6 @@ async function updateThumbnails(ocInstance, episodesData, authObj) {
       }
     }
   }
-
-  async function handleResponse(index) {}
 }
 
 module.exports = {
