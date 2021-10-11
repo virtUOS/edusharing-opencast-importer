@@ -14,6 +14,7 @@ const esAxiosService = require('../services/es-axios')
 const esFolders = require('../edu-sharing/create-folder-structure')
 const esChildren = require('../edu-sharing/create-children')
 const esMetadata = require('../edu-sharing/update-metadata')
+const esUpdateThumbnails = require('../edu-sharing/update-thumbnails')
 const esPermissions = require('../edu-sharing/update-permissions')
 const { NoSavedDataError } = require('../models/errors')
 
@@ -80,10 +81,16 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
       ocSeries,
       ocEpisodes,
       ocInstance,
-      seriesData
+      seriesData,
+      ocInstanceObj
     )
 
-    episodesData = await sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
+    episodesData = await sorter.getEpisodesDataObject(
+      ocEpisodes,
+      ocInstance,
+      episodesData,
+      ocInstanceObj
+    )
     storeData()
 
     await esAuth.initEsAuth()
@@ -97,8 +104,11 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
 
     episodesData = await esMetadata.updateMetadata(ocInstance, episodesData)
     storeData()
-
+    
+    episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData)
+    
     await esPermissions.updatePermissions(ocInstance, episodesData)
+
     storeData()
 
     logger.Info('[Harvest] Finished')
