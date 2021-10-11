@@ -1,6 +1,12 @@
 'use strict'
 
-function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, seriesData) {
+function getSortedEpisodesPerSeriesIds(
+  series,
+  filteredEpisodes,
+  ocInstance,
+  seriesData,
+  ocInstanceObj
+) {
   if (series.length === 0 && seriesData.length === 0) return updateMetadata([])
   if (!seriesData || seriesData.length <= series.length) {
     const uniqueSeriesIds = getUniqueSeriesIds(series)
@@ -10,7 +16,8 @@ function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, ser
       sortedEpisodesPerSeries,
       series,
       ocInstance,
-      seriesData
+      seriesData,
+      ocInstanceObj
     )
     return updateMetadata(sortedSeriesData)
   } else {
@@ -51,22 +58,27 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
   return sortedEpisodes.filter((series) => series.episodes.length > 0)
 }
 
-function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesData) {
+function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesData, ocInstanceObj) {
   return sortedEpisodesPerSeries.map((series) => {
     const existingSeries = getExistingSeries(seriesData, series.id)
     const currentOcSeries = ocSeries[ocSeries.findIndex((ocSeries) => ocSeries.id === series.id)]
 
     if (currentOcSeries) {
       series.type = 'series'
-      if (currentOcSeries.dcTitle) series.title = currentOcSeries.dcTitle
-      if (currentOcSeries.dcDescription) series.description = currentOcSeries.dcDescription
-      if (currentOcSeries.dcPublisher) series.publisher = currentOcSeries.dcPublisher
-      if (currentOcSeries.dcCreated) series.created = currentOcSeries.dcCreated
-      if (currentOcSeries.dcContributor) series.contributor = currentOcSeries.dcContributor
-      if (currentOcSeries.dcLanguage) series.language = currentOcSeries.dcLanguage
-      if (currentOcSeries.keywords.length > 0) series.keywords = currentOcSeries.keywords
-      if (currentOcSeries.mediaType) series.mediaType = currentOcSeries.mediaType
-      if (currentOcSeries.modified) series.modified = currentOcSeries.modified
+      series.orgName = ocInstanceObj.orgName || ''
+      series.orgUrl = ocInstanceObj.orgUrl || ''
+      series.title = currentOcSeries.dcTitle || ''
+      series.subject = currentOcSeries.dcSubject || ''
+      series.creator = currentOcSeries.dcCreator || ''
+      series.description = currentOcSeries.dcDescription || ''
+      series.publisher = currentOcSeries.dcPublisher || ''
+      series.rightsholder = currentOcSeries.dcRightsHolder || ''
+      series.created = currentOcSeries.dcCreated || ''
+      series.contributor = currentOcSeries.dcContributor || ''
+      series.language = currentOcSeries.dcLanguage || ''
+      series.keywords = currentOcSeries.keywords || []
+      series.mediaType = currentOcSeries.mediaType || ''
+      series.modified = currentOcSeries.modified || ''
       series.from = ocInstance
       series.lastUpdated = new Date()
       if (existingSeries) {
@@ -116,10 +128,16 @@ function setMetadataDates(data) {
   return data
 }
 
-function getEpisodesDataObject(ocEpisodes, ocInstance, episodesData) {
+function getEpisodesDataObject(ocEpisodes, ocInstance, episodesData, ocInstanceObj) {
   const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
   const episodeObjs = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-  const episodes = applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData)
+  const episodes = applyEpisodeData(
+    episodeObjs,
+    ocEpisodes,
+    ocInstance,
+    episodesData,
+    ocInstanceObj
+  )
   return updateMetadata(episodes)
 }
 
@@ -139,7 +157,7 @@ function createObjectsFromEpisodeIds(uniqueEpisodeIds) {
   })
 }
 
-function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
+function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData, ocInstanceObj) {
   return episodeObjs.map((episode) => {
     const existingEpisode = getExistingEpisode(episodesData, episode.id)
 
@@ -152,22 +170,36 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
 
       if (newOcEpisode) {
         episode.type = 'episode'
-        if (newOcEpisode.dcExtent) episode.extent = newOcEpisode.dcExtent
-        if (newOcEpisode.dcTitle) episode.title = newOcEpisode.dcTitle
-        if (newOcEpisode.dcDescription) episode.description = newOcEpisode.dcDescription
-        if (newOcEpisode.dcCreator) episode.creator = newOcEpisode.dcCreator
-        if (newOcEpisode.dcCreated) episode.created = newOcEpisode.dcCreated
-        if (newOcEpisode.dcLicense) episode.license = newOcEpisode.dcLicense
-        if (newOcEpisode.dcIsPartOf) episode.isPartOf = newOcEpisode.dcIsPartOf
-        if (newOcEpisode.mediaType) episode.mediaType = newOcEpisode.mediaType
-        if (newOcEpisode.keywords.length > 0) episode.keywords = newOcEpisode.keywords
+        episode.orgName = ocInstanceObj.orgName || ''
+        episode.orgUrl = ocInstanceObj.orgUrl || ''
+        episode.extent = newOcEpisode.dcExtent || 0
+        episode.title = newOcEpisode.dcTitle || ''
+        episode.description = newOcEpisode.dcDescription || ''
+        episode.subject = newOcEpisode.dcSubject || ''
+        episode.spatial = newOcEpisode.dcSpatial || ''
+        episode.rghtsholder = newOcEpisode.dcRightsHolder || ''
+        episode.creator = newOcEpisode.dcCreator || ''
+        episode.creators = newOcEpisode.mediapackage.creators
+          ? newOcEpisode.mediapackage.creators.creator
+          : []
+        episode.contributor = newOcEpisode.dcContributor || ''
+        episode.contributors = newOcEpisode.mediapackage.contributors
+          ? newOcEpisode.mediapackage.contributors.contributor
+          : []
+        episode.created = newOcEpisode.dcCreated || ''
+        episode.license = getLicense(newOcEpisode.dcLicense) || ''
+        episode.isPartOf = newOcEpisode.dcIsPartOf || ''
+        episode.mediaType = newOcEpisode.mediaType || ''
+        episode.language = newOcEpisode.dcLanguage || ''
+        episode.keywords = newOcEpisode.keywords || []
         episode.url = createEpisodeUrl(ocInstance, episode.id)
-        if (newOcEpisode.modified) episode.modified = newOcEpisode.modified
+        episode.modified = newOcEpisode.modified || ''
         episode.from = ocInstance
         episode.lastUpdated = new Date()
         episode.previewPlayer = getPreviewUrl('presenter/player+preview', newOcEpisode)
         episode.previewSearch = getPreviewUrl('presenter/search+preview', newOcEpisode)
       }
+
       return episode
     }
   })
@@ -187,6 +219,12 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData) {
         return attachment[i].url
       }
     }
+  }
+
+  function getLicense(license) {
+    const publicDomainStrings = ['pd', 'public domain', 'pdm']
+
+    return publicDomainStrings.includes(license.toLowerCase()) ? 'PDM' : license
   }
 }
 
