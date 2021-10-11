@@ -20,12 +20,12 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
       if (episodesData[i].type === 'metadata') continue
-      if (episodesData[i].nodeId) continue
+      // if (episodesData[i].nodeId) continue
       requests.push(
         limit(() =>
           sendPostRequest(
             getUrlCreateChildren(episodesData[i], seriesData),
-            getBodyCreateFolder(episodesData[i].url),
+            getBodyCreateFolder(episodesData[i]),
             getHeadersCreateFolder(authObj),
             i
           ).catch((error) => {
@@ -66,7 +66,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
   function getParamsCreateFolder() {
     return new URLSearchParams({
       type: 'ccm:io',
-      renameIfExists: true,
+      renameIfExists: false,
       assocType: '',
       versionComment: 'MAIN_FILE_UPLOAD'
     })
@@ -81,9 +81,10 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     }
   }
 
-  function getBodyCreateFolder(urlContent) {
+  function getBodyCreateFolder(episodeData) {
     return JSON.stringify({
-      'ccm:wwwurl': [urlContent],
+      'cm:name': [episodeData.title],
+      'ccm:wwwurl': [episodeData.url],
       'ccm:linktype': ['USER_GENERATED']
     }).toString()
   }
