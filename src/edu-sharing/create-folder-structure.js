@@ -2,20 +2,20 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
-const existingNodes = require('../edu-sharing/get-existing-nodes.js')
 const { ESError, ESPostError } = require('../models/errors')
+const existingNodes = require('../edu-sharing/get-existing-nodes.js')
 
-async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
+async function createFolderForOcInstances(ocInstance, seriesData) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
   const modifiedSeriesData = seriesData
-  const headers = getHeadersCreateFolder(authObj)
+  const headers = getHeadersCreateFolder()
   const requests = []
   let existingDirs = []
 
   return await existingNodes
-    .checkExistingDirs(ocInstance, authObj)
+    .checkExistingDirs(ocInstance)
     .then(async (dirs) => {
       existingDirs = dirs
       await createMainFolder(ocInstance, existingDirs)
@@ -38,6 +38,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
 
         if (foundDir === false) {
           if (modifiedSeriesData[i].type === 'metadata') continue
+
           requests.push(
             limit(() =>
               sendPostRequest(
@@ -54,11 +55,6 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     })
     .then((res) => {
       return Promise.all(requests).then((res) => {
-        if (res.code === 'ECONNREFUSED') {
-          logger.Error(
-            '[ES API] ' + CONF.es.protocol + '://' + CONF.es.domain + ' is not reachable - skipping'
-          )
-        }
         return modifiedSeriesData
       })
     })
@@ -92,7 +88,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
   }
 
   async function sendPostRequest(url, body, headers, ocInstance, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
@@ -112,9 +108,6 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         }
         if (error.response.status === 409) return true
         throw new ESPostError(error.message, error.code)
-      })
-      .catch((error) => {
-        logger.Error('[ES API] ' + error)
       })
   }
 
@@ -169,7 +162,7 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',
@@ -177,14 +170,12 @@ async function createFolderForOcInstances(ocInstance, seriesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'
       }
     }
   }
-
   function modifyStringES(s) {
     return s.replace(/ /g, '-').replace(/\(|\)/g, '').toLowerCase().substring(0, 50)
   }

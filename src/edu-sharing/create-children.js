@@ -2,14 +2,14 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function createChildren(ocInstance, episodesData, seriesData, authObj) {
+async function createChildren(ocInstance, episodesData, seriesData) {
   logger.Info('[ES API] Creating children per episode for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(authObj, episodesData, seriesData)
+  return await returnReqsAsPromiseArray(episodesData, seriesData)
     .then(async (res) => {
       return episodesData
     })
@@ -19,7 +19,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
       } else throw new ESError('[ES API] Error while creating children: ' + error.message)
     })
 
-  async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
+  async function returnReqsAsPromiseArray(episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
@@ -31,7 +31,7 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
           sendPostRequest(
             getUrlCreateChildren(episodesData[i], seriesData),
             getBodyCreateFolder(episodesData[i]),
-            getHeadersCreateFolder(authObj),
+            getHeadersCreateFolder(),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
@@ -42,11 +42,11 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
       )
     }
 
-    return Promise.all(requests)
+    return Promise.allSettled(requests)
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await axios
+    return await esAxios
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
@@ -89,14 +89,21 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
   }
 
   function getBodyCreateFolder(episodeData) {
+    const filename = `${episodeData.id}-${episodeData.title
+      .replace(/\s+/g, '-')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[(),!?=:;/]/g, '')
+      .toLowerCase()
+      .substring(0, 40)}`
+
     return JSON.stringify({
-      'cm:name': [episodeData.title],
+      'cm:name': [filename],
       'ccm:wwwurl': [episodeData.url],
       'ccm:linktype': ['USER_GENERATED']
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',
@@ -104,7 +111,6 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'

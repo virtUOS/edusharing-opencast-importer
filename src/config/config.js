@@ -15,7 +15,8 @@ config.es = {
   routes: {
     api: '/edu-sharing/rest/node/v1/nodes',
     oauth: '/edu-sharing/oauth2/token',
-    baseFolder: '/-home-'
+    baseFolder: '/-home-',
+    validation: '/edu-sharing/rest/authentication/v1/validateSession'
   }
 }
 
@@ -51,7 +52,7 @@ config.logger = {
 }
 
 config.filter = {
-  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD']
+  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
 }
 
 module.exports = config

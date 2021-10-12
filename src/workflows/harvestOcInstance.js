@@ -10,9 +10,11 @@ const getSeriesIdsFromEpisodes = require('../opencast/get-series-from-episodes')
 const sorter = require('../services/sorter')
 const filter = require('../services/filter-episodes')
 const esAuth = require('../edu-sharing/get-auth-token')
+const esAxiosService = require('../services/es-axios')
 const esFolders = require('../edu-sharing/create-folder-structure')
 const esChildren = require('../edu-sharing/create-children')
 const esMetadata = require('../edu-sharing/update-metadata')
+const esUpdateThumbnails = require('../edu-sharing/update-thumbnails')
 const esPermissions = require('../edu-sharing/update-permissions')
 const { NoSavedDataError } = require('../models/errors')
 
@@ -22,7 +24,6 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
   let ocSeries
   let seriesData
   let episodesData
-  let authObj
 
   async function initStoredData() {
     const dataPromises = [
@@ -80,26 +81,37 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
       ocSeries,
       ocEpisodes,
       ocInstance,
-      seriesData
+      seriesData,
+      ocInstanceObj
     )
 
-    episodesData = await sorter.getEpisodesDataObject(ocEpisodes, ocInstance, episodesData)
+    episodesData = await sorter.getEpisodesDataObject(
+      ocEpisodes,
+      ocInstance,
+      episodesData,
+      ocInstanceObj
+    )
     storeData()
 
-    authObj = await esAuth.getEsAuth()
-    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData, authObj)
+    await esAuth.initEsAuth()
+    await esAxiosService.initEsAxios()
+
+    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData)
     storeData()
 
-    episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData, authObj)
+    episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData)
     storeData()
 
-    episodesData = await esMetadata.updateMetadata(ocInstance, episodesData, authObj)
+    episodesData = await esMetadata.updateMetadata(ocInstance, episodesData)
     storeData()
 
-    await esPermissions.updatePermissions(ocInstance, episodesData, authObj)
+    episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData)
+
+    await esPermissions.updatePermissions(ocInstance, episodesData)
+
     storeData()
 
-    logger.Info('[Harvest] Finished')
+    logger.Info('[Harvest] Finished ' + ocInstance)
   } catch (error) {
     logger.Error(error.message)
   }

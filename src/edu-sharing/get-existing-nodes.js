@@ -4,7 +4,7 @@ require('dotenv').config()
 require('axios-debug-log')
 const logger = require('node-file-logger')
 const CONF = require('../config/config')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 
 async function checkExistingDirs(ocInstance, authObj) {
   let mainDirID = ''
@@ -13,8 +13,8 @@ async function checkExistingDirs(ocInstance, authObj) {
   let esDirectories = []
 
   // get nodeID of home directory
-  await axios
-    .get(getUrlMainFolder(), getHeadersMetadata(authObj))
+  await esAxios
+    .get(getUrlMainFolder(), getHeadersMetadata())
     .then((response) => {
       mainDirID = response.data.node.ref.id
     })
@@ -23,20 +23,21 @@ async function checkExistingDirs(ocInstance, authObj) {
     })
 
   // get nodeID of ocInstance directory if it exists
-  await axios
-    .get(getUrlChildFolders(mainDirID), getHeadersMetadata(authObj))
+  await esAxios
+    .get(getUrlChildFolders(mainDirID), getHeadersMetadata())
     .then(async (response) => {
       response.data.nodes.forEach(async (node) => {
         if (node.name === ocInstance && node.isDirectory === true) {
           // safe info
           esDirectories = node
         }
-        console.log(response.data)
       })
+      // if ocInstance directory does not exist
+      if (esDirectories.length === 0) return esDirectories
 
       // get all existing subdirectories + nodeIDs
-      await axios
-        .get(getUrlChildFolders(esDirectories.ref.id), getHeadersMetadata(authObj))
+      await esAxios
+        .get(getUrlChildFolders(esDirectories.ref.id), getHeadersMetadata())
         .then(async (response) => {
           // safe data
           const subDirs = []
@@ -52,12 +53,7 @@ async function checkExistingDirs(ocInstance, authObj) {
         })
     })
     .catch((err) => {
-      // if ocInstance directory does not exist
-      console.log(err)
-      // if (err.response.status === 404) {
-      return esDirectories
-      // }
-      // logger.Error('[ES API] ' + err)
+      logger.Error('[ES API] ' + err)
     })
   return esDirectories
 }
@@ -77,11 +73,10 @@ function getUrlChildFolders(nodeId) {
   )
 }
 
-function getHeadersMetadata(authObj) {
+function getHeadersMetadata() {
   return {
     headers: {
-      Accept: 'application/json',
-      Authorization: authObj.type + ' ' + authObj.token_access
+      Accept: 'application/json'
     }
   }
 }
