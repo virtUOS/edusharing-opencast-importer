@@ -88,15 +88,8 @@ async function createChildren(ocInstance, episodesData, seriesData) {
   }
 
   function getBodyCreateFolder(episodeData) {
-    const filename = `${episodeData.id}-${episodeData.title
-      .replace(/\s+/g, '-')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[(),!?=:;/]/g, '')
-      .toLowerCase()
-      .substring(0, 40)}`
-
     return JSON.stringify({
-      'cm:name': [filename],
+      'cm:name': [episodeData.filename],
       'ccm:wwwurl': [episodeData.url],
       'ccm:linktype': ['USER_GENERATED']
     }).toString()
