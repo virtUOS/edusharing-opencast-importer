@@ -25,7 +25,6 @@ async function createChildren(ocInstance, episodesData, seriesData) {
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
       if (episodesData[i].type === 'metadata') continue
-      // if (episodesData[i].nodeId) continue
       requests.push(
         limit(() =>
           sendPostRequest(

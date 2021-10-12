@@ -2,9 +2,9 @@
 
 require('dotenv').config()
 require('axios-debug-log')
-const logger = require('node-file-logger')
 const CONF = require('../config/config')
 const { esAxios } = require('../services/es-axios')
+const { ESError } = require('../models/errors')
 
 async function checkExistingDirs(ocInstance, authObj) {
   let mainDirID = ''
@@ -19,7 +19,7 @@ async function checkExistingDirs(ocInstance, authObj) {
       mainDirID = response.data.node.ref.id
     })
     .catch((err) => {
-      logger.Error('[ES API] ' + err)
+      throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
     })
 
   // get nodeID of ocInstance directory if it exists
@@ -49,11 +49,11 @@ async function checkExistingDirs(ocInstance, authObj) {
           esDirectories.nodes = subDirs
         })
         .catch((err) => {
-          logger.Error('[ES API] ' + err)
+          throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
         })
     })
     .catch((err) => {
-      logger.Error('[ES API] ' + err)
+      throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
     })
   return esDirectories
 }

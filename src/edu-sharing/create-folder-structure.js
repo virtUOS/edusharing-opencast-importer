@@ -105,7 +105,6 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
             error.code
           )
         }
-        if (error.response.status === 409) return true
         throw new ESPostError(error.message, error.code)
       })
   }
