@@ -24,7 +24,6 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
       if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
       const limit = pLimit(CONF.es.settings.maxPendingPromises)
-
       for (let i = 1; i < modifiedSeriesData.length; i++) {
         let foundDir = false
         if (existingDirs.nodes) {
