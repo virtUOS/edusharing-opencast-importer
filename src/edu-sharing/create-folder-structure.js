@@ -175,7 +175,12 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     }
   }
   function modifyStringES(s) {
-    return s.replace(/ /g, '-').replace(/\(|\)/g, '').toLowerCase().substring(0, 50)
+    return s
+      .replace(/ /g, '-')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[|(),.!?=:;/]/g, '')
+      .toLowerCase()
+      .substring(0, 50)
   }
 }
 
