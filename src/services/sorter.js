@@ -198,6 +198,12 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData, ocI
         episode.lastUpdated = new Date()
         episode.previewPlayer = getPreviewUrl('presenter/player+preview', newOcEpisode)
         episode.previewSearch = getPreviewUrl('presenter/search+preview', newOcEpisode)
+        episode.filename = `${episode.id}-${episode.title
+          .replace(/\s+/g, '-')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[(),!?=:;/]/g, '')
+          .toLowerCase()
+          .substring(0, 40)}`
       }
 
       return episode
