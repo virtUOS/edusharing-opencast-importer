@@ -61,36 +61,24 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
 
     logger.Info(`[Harvest] Import Opencast content from ${ocInstance} to ${CONF.es.host.domain}`)
 
-    const episodes = await getAllPublishedEpisodes.start(
-      ocEpisodes,
-      forceUpdate,
-      ocInstance,
-      ocInstanceObj
-    )
+    const episodes = await getAllPublishedEpisodes.start(ocEpisodes, forceUpdate, ocInstanceObj)
 
     ocEpisodes = await filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
     ocSeries = await getSeriesIdsFromEpisodes.start(
       ocEpisodes,
       ocSeries,
       forceUpdate,
-      ocInstance,
       ocInstanceObj
     )
 
     seriesData = await sorter.getSortedEpisodesPerSeriesIds(
       ocSeries,
       ocEpisodes,
-      ocInstance,
       seriesData,
       ocInstanceObj
     )
 
-    episodesData = await sorter.getEpisodesDataObject(
-      ocEpisodes,
-      ocInstance,
-      episodesData,
-      ocInstanceObj
-    )
+    episodesData = await sorter.getEpisodesDataObject(ocEpisodes, episodesData, ocInstanceObj)
     storeData()
 
     await esAuth.initEsAuth()

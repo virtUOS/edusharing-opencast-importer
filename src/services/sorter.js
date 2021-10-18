@@ -1,12 +1,7 @@
 'use strict'
 
-function getSortedEpisodesPerSeriesIds(
-  series,
-  filteredEpisodes,
-  ocInstance,
-  seriesData,
-  ocInstanceObj
-) {
+function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, seriesData, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
   if (series.length === 0 && seriesData.length === 0) return updateMetadata([])
   if (!seriesData || seriesData.length <= series.length) {
     const uniqueSeriesIds = getUniqueSeriesIds(series)
@@ -128,16 +123,10 @@ function setMetadataDates(data) {
   return data
 }
 
-function getEpisodesDataObject(ocEpisodes, ocInstance, episodesData, ocInstanceObj) {
+function getEpisodesDataObject(ocEpisodes, episodesData, ocInstanceObj) {
   const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
   const episodeObjs = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-  const episodes = applyEpisodeData(
-    episodeObjs,
-    ocEpisodes,
-    ocInstance,
-    episodesData,
-    ocInstanceObj
-  )
+  const episodes = applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj)
   return updateMetadata(episodes)
 }
 
@@ -157,7 +146,8 @@ function createObjectsFromEpisodeIds(uniqueEpisodeIds) {
   })
 }
 
-function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData, ocInstanceObj) {
+function applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
   return episodeObjs.map((episode) => {
     const existingEpisode = getExistingEpisode(episodesData, episode.id)
 
