@@ -14,75 +14,90 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
   const requests = []
   let existingDirs = []
 
-  return await existingNodes
-    .checkExistingDirs(ocInstance)
-    .then(async (dirs) => {
-      existingDirs = dirs
-      await createMainFolder(ocInstance, existingDirs)
-    })
-    .then(async (res) => {
-      if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
+  try {
+    existingDirs = await existingNodes.checkExistingDirs(ocInstance)
 
-      const limit = pLimit(CONF.es.settings.maxPendingPromises)
-      for (let i = 1; i < modifiedSeriesData.length; i++) {
-        let foundDir = false
-        if (existingDirs.nodes) {
-          for (const node of existingDirs.nodes) {
-            if (node.name === modifyStringES(modifiedSeriesData[i].title)) {
-              addNodeIdToSeries(node, i)
-              foundDir = true
-            }
+    await createMainFolder(ocInstance, existingDirs)
+
+    if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
+
+    const limit = pLimit(CONF.es.settings.maxPendingPromises)
+    for (let i = 1; i < modifiedSeriesData.length; i++) {
+      let foundDir = false
+      if (existingDirs.nodes) {
+        for (const node of existingDirs.nodes) {
+          if (node.name === modifyStringES(modifiedSeriesData[i].title)) {
+            addNodeIdToSeries(node, i)
+            foundDir = true
           }
         }
+      }
 
-        if (foundDir === false) {
-          if (modifiedSeriesData[i].type === 'metadata') continue
+      if (foundDir === false) {
+        if (modifiedSeriesData[i].type === 'metadata') continue
 
-          requests.push(
-            limit(() =>
-              sendPostRequest(
-                getUrlCreateFolder(modifiedSeriesData[0].nodeId),
-                getBodyCreateFolder(modifyStringES(modifiedSeriesData[i].title)),
-                headers,
-                ocInstance,
-                i
-              )
+        requests.push(
+          // create folders
+          limit(() =>
+            sendPostRequest(
+              getUrlCreateFolder(modifiedSeriesData[0].nodeId),
+              getBodyCreateFolder(modifyStringES(modifiedSeriesData[i].title)),
+              headers,
+              ocInstance,
+              i
+            )
+          ),
+          // create collections
+          limit(() =>
+            sendPostRequest(
+              getUrlCreateCollection(modifiedSeriesData[0].collectionId),
+              getBodyCreateCollection(modifiedSeriesData[i]),
+              headers,
+              ocInstance,
+              i
             )
           )
-        }
+        )
       }
-    })
-    .then((res) => {
-      return Promise.all(requests).then((res) => {
-        return modifiedSeriesData
-      })
-    })
-    .catch((error) => {
-      if (error instanceof ESPostError && error.code === 'ECONNREFUSED') {
-        logger.Error(error.message)
-        return modifiedSeriesData
-      } else if (error instanceof ESError) {
-        throw error
-      } else {
-        throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
-      }
-    })
+    }
+
+    await Promise.all(requests)
+    return modifiedSeriesData
+  } catch (error) {
+    if (error instanceof ESPostError && error.code === 'ECONNREFUSED') {
+      logger.Error(error.message)
+      return modifiedSeriesData
+    } else if (error instanceof ESError) {
+      throw error
+    } else {
+      throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
+    }
+  }
 
   async function createMainFolder(ocInstance, dirs) {
     if (dirs.name === ocInstance) {
       return addMetadataToSeriesData(dirs)
     } else if (modifiedSeriesData[0].type === 'metadata') {
-      return await sendPostRequest(
-        getUrlCreateFolder(),
-        getBodyCreateFolder(ocInstance),
-        headers,
-        ocInstance,
-        0
-      ).catch((error) => {
+      try {
+        await sendPostRequest(
+          getUrlCreateFolder(),
+          getBodyCreateFolder(ocInstance),
+          headers,
+          ocInstance,
+          0
+        )
+        await sendPostRequest(
+          getUrlCreateCollection(),
+          getBodyCreateCollection(ocInstance),
+          headers,
+          ocInstance,
+          0
+        )
+      } catch (error) {
         if (error instanceof ESPostError) {
           throw error
         } else throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
-      })
+      }
     }
   }
 
@@ -111,11 +126,18 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
 
   function handleResponse(res, ocInstance, index) {
     if (!res) throw Error(res)
-    if (res.status === 200 && res.data.node.name === ocInstance) {
-      logger.Info('[ES API] Created main folder for ' + ocInstance)
-      return addMetadataToSeriesData(res.data.node)
-    } else if (res.status === 200) {
-      return addNodeIdToSeries(res.data.node, index)
+    // handle folder response
+    if (Object.prototype.hasOwnProperty.call(res.data, 'node')) {
+      if (res.status === 200 && res.data.node.name === ocInstance) {
+        logger.Info('[ES API] Created main folder for ' + ocInstance)
+        return addMetadataToSeriesData(res.data.node)
+      } else if (res.status === 200) {
+        return addNodeIdToSeries(res.data.node, index)
+      }
+    } else {
+      // handle collection response
+      addCollectionIdToSeries(res.data.collection, index)
+      // console.log(res.data)
     }
   }
 
@@ -132,6 +154,10 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     modifiedSeriesData[index].lastUpdated = new Date()
   }
 
+  function addCollectionIdToSeries(response, index) {
+    modifiedSeriesData[index].collectionId = response.ref.id
+  }
+
   function getUrlCreateFolder(nodeId) {
     const nodeRoute = nodeId ? '/' + nodeId + '/children' : '/-userhome-/children'
     return (
@@ -144,6 +170,21 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     )
   }
 
+  function getUrlCreateCollection(nodeId) {
+    const nodeRoute = nodeId ? '/' + nodeId + '/children' : '/-root-/children'
+    return CONF.es.host.url + CONF.es.routes.collections + CONF.es.routes.baseFolder + nodeRoute
+  }
+
+  function getBodyCreateCollection(modifiedSeriesData) {
+    return JSON.stringify({
+      color: '#975B5D',
+      description: modifiedSeriesData.description || '',
+      scope: 'EDU_ALL',
+      title: modifiedSeriesData.title || modifiedSeriesData,
+      type: 'default'
+    }).toString()
+  }
+
   function getParamsCreateFolder() {
     return new URLSearchParams({
       type: 'cm:folder',
@@ -152,7 +193,6 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
   }
 
   function getBodyCreateFolder(folderName) {
-    // const randomName = ocInstance + '-' + Math.floor(Math.random() * 100000)
     return JSON.stringify({
       'cm:name': [folderName],
       'cm:edu_metadataset': ['mds'],
