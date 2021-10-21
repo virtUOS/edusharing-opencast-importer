@@ -44,18 +44,28 @@ async function createChildren(ocInstance, episodesData, seriesData) {
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    await esAxios
-      .post(url, body, headers)
-      .then(async (response) => {
-        if (response.status === 200) {
-          await handleResponse(response.data.node, index)
-          // add to collection
+    try {
+      const response = await esAxios.post(url, body, headers)
+      if (response.status === 200) {
+        await handleResponse(response.data.node, index)
+        // add to collection
+        await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+      }
+    } catch (error) {
+      // episode already exists
+      if (error.response.status === 409) {
+        try {
           await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+        } catch (error) {
+          // episode is already added to collection
+          if (error.response.status !== 409) {
+            throw new ESPostError('Could not add episode to collection', error.response.status)
+          }
         }
-      })
-      .catch((error) => {
-        throw new ESPostError(error.message, error.code)
-      })
+      } else {
+        throw new ESPostError('Could not create episode', error.response.status)
+      }
+    }
   }
 
   function getUrlCreateChildren(episode, seriesData) {

@@ -6,6 +6,7 @@ const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
 const existingNodes = require('../edu-sharing/get-existing-nodes.js')
+const existingCollections = require('../edu-sharing/get-existing-collections.js')
 
 async function createFolderForOcInstances(ocInstance, seriesData) {
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
@@ -13,17 +14,22 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
   const headers = getHeadersCreateFolder()
   const requests = []
   let existingDirs = []
+  let existingColls = []
 
   try {
     existingDirs = await existingNodes.checkExistingDirs(ocInstance)
+    existingColls = await existingCollections.checkExistingCollections(ocInstance)
 
-    await createMainFolder(ocInstance, existingDirs)
+    await createMainFolder(ocInstance, existingDirs, existingColls)
 
     if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
     for (let i = 1; i < modifiedSeriesData.length; i++) {
+      if (modifiedSeriesData[i].type === 'metadata') continue
+
       let foundDir = false
+      let foundColl = false
       if (existingDirs.nodes) {
         for (const node of existingDirs.nodes) {
           if (node.name === modifyStringES(modifiedSeriesData[i].title)) {
@@ -33,9 +39,16 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
         }
       }
 
-      if (foundDir === false) {
-        if (modifiedSeriesData[i].type === 'metadata') continue
+      if (existingColls.collections) {
+        for (const collection of existingColls.collections) {
+          if (collection.title === modifiedSeriesData[i].title) {
+            addCollectionIdToSeries(collection, i)
+            foundColl = true
+          }
+        }
+      }
 
+      if (foundDir === false) {
         requests.push(
           // create folders
           limit(() =>
@@ -46,7 +59,12 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
               ocInstance,
               i
             )
-          ),
+          )
+        )
+      }
+
+      if (foundColl === false) {
+        requests.push(
           // create collections
           limit(() =>
             sendPostRequest(
@@ -74,29 +92,44 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     }
   }
 
-  async function createMainFolder(ocInstance, dirs) {
-    if (dirs.name === ocInstance) {
+  async function createMainFolder(ocInstance, dirs, colls) {
+    if (dirs.name === ocInstance && colls.title === ocInstance) {
+      addCollectionIdToSeries(colls, 0)
       return addMetadataToSeriesData(dirs)
     } else if (modifiedSeriesData[0].type === 'metadata') {
-      try {
-        await sendPostRequest(
-          getUrlCreateFolder(),
-          getBodyCreateFolder(ocInstance),
-          headers,
-          ocInstance,
-          0
-        )
-        await sendPostRequest(
-          getUrlCreateCollection(),
-          getBodyCreateCollection(ocInstance),
-          headers,
-          ocInstance,
-          0
-        )
-      } catch (error) {
-        if (error instanceof ESPostError) {
-          throw error
-        } else throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
+      if (dirs.name !== ocInstance) {
+        try {
+          await sendPostRequest(
+            getUrlCreateFolder(),
+            getBodyCreateFolder(ocInstance),
+            headers,
+            ocInstance,
+            0
+          )
+        } catch (error) {
+          if (error instanceof ESPostError) {
+            throw error
+          } else {
+            throw new ESError('[ES API] Error while creating folder structure: ' + error.message)
+          }
+        }
+      }
+      if (colls.title !== ocInstance) {
+        try {
+          await sendPostRequest(
+            getUrlCreateCollection(),
+            getBodyCreateCollection(ocInstance),
+            headers,
+            ocInstance,
+            0
+          )
+        } catch (error) {
+          if (error instanceof ESPostError) {
+            throw error
+          } else {
+            throw new ESError('[ES API] Error while creating collection: ' + error.message)
+          }
+        }
       }
     }
   }
@@ -137,7 +170,6 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     } else {
       // handle collection response
       addCollectionIdToSeries(res.data.collection, index)
-      // console.log(res.data)
     }
   }
 
