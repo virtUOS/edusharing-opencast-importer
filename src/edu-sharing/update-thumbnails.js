@@ -78,7 +78,7 @@ async function updateThumbnails(ocInstance, episodesData) {
     return await esAxios
       .get(episode.previewPlayer, { responseType: 'stream' })
       .then(async (response) => {
-        if (response.status === 200) {
+        if (response && response.status === 200) {
           const formData = new FormData()
           formData.append('image', response.data)
           return formData
