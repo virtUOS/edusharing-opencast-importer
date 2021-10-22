@@ -5,7 +5,8 @@ const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
 const { OCError, OCGetError } = require('../models/errors')
 
-async function start(ocEpisodes, force, ocInstance, ocInstanceObj) {
+async function start(ocEpisodes, force, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
   if (force) logger.Info('[OC Episodes] Force episodes GET requests for ' + ocInstance)
   if (ocEpisodes && !force) {
     if (ocEpisodes.length > 0) {
