@@ -16,7 +16,8 @@ config.es = {
     api: '/edu-sharing/rest/node/v1/nodes',
     oauth: '/edu-sharing/oauth2/token',
     baseFolder: '/-home-',
-    validation: '/edu-sharing/rest/authentication/v1/validateSession'
+    validation: '/edu-sharing/rest/authentication/v1/validateSession',
+    collections: '/edu-sharing/rest/collection/v1/collections'
   }
 }
 

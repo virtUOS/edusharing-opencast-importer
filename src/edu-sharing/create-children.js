@@ -9,15 +9,14 @@ const { ESError, ESPostError } = require('../models/errors')
 async function createChildren(ocInstance, episodesData, seriesData) {
   logger.Info('[ES API] Creating children per episode for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(episodesData, seriesData)
-    .then(async (res) => {
-      return episodesData
-    })
-    .catch((error) => {
-      if (error instanceof ESError) {
-        throw error
-      } else throw new ESError('[ES API] Error while creating children: ' + error.message)
-    })
+  try {
+    await returnReqsAsPromiseArray(episodesData, seriesData)
+    return episodesData
+  } catch (error) {
+    if (error instanceof ESError) {
+      throw error
+    } else throw new ESError('[ES API] Error while creating children: ' + error.message)
+  }
 
   async function returnReqsAsPromiseArray(episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
@@ -41,20 +40,32 @@ async function createChildren(ocInstance, episodesData, seriesData) {
       )
     }
 
-    return Promise.allSettled(requests)
+    await Promise.allSettled(requests)
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await esAxios
-      .post(url, body, headers)
-      .then((response) => {
-        if (response.status === 200) {
-          return handleResponse(response.data.node, index)
+    try {
+      const response = await esAxios.post(url, body, headers)
+      if (response.status === 200) {
+        await handleResponse(response.data.node, index)
+        // add to collection
+        await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+      }
+    } catch (error) {
+      // episode already exists
+      if (error.response.status === 409) {
+        try {
+          await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+        } catch (error) {
+          // episode is already added to collection
+          if (error.response.status !== 409) {
+            throw new ESPostError('Could not add episode to collection', error.response.status)
+          }
         }
-      })
-      .catch((error) => {
-        throw new ESPostError(error.message, error.code)
-      })
+      } else {
+        throw new ESPostError('Could not create episode', error.response.status)
+      }
+    }
   }
 
   function getUrlCreateChildren(episode, seriesData) {
@@ -66,6 +77,19 @@ async function createChildren(ocInstance, episodesData, seriesData) {
       getParentNodeId(episode, seriesData) +
       '/children?' +
       getParamsCreateFolder()
+    )
+  }
+
+  function getUrlUpdateCollection(episode, seriesData) {
+    return (
+      CONF.es.host.url +
+      CONF.es.routes.collections +
+      CONF.es.routes.baseFolder +
+      '/' +
+      getParentCollection(episode, seriesData) +
+      '/references' +
+      '/' +
+      episode.nodeId
     )
   }
 
@@ -84,6 +108,15 @@ async function createChildren(ocInstance, episodesData, seriesData) {
       return seriesObjFound ? seriesObjFound.nodeId : seriesData[0].metadata.nodeId
     } else {
       return seriesData[0].nodeId
+    }
+  }
+
+  function getParentCollection(episode, seriesData) {
+    if (episode.isPartOf) {
+      const seriesObjFound = seriesData.find((series) => series.id === episode.isPartOf)
+      return seriesObjFound ? seriesObjFound.collectionId : seriesData[0].metadata.collectionId
+    } else {
+      return seriesData[0].collectionId
     }
   }
 

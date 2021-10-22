@@ -6,7 +6,7 @@ const CONF = require('../config/config')
 const { esAxios } = require('../services/es-axios')
 const { ESError } = require('../models/errors')
 
-async function checkExistingDirs(ocInstance, authObj) {
+async function checkExistingDirs(ocInstance) {
   let mainDirID = ''
 
   // obj to store all existing ES diretories
