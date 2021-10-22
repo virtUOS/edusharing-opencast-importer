@@ -227,10 +227,16 @@ function applyEpisodeData(episodeObjs, ocEpisodes, ocInstance, episodesData, ocI
     }
   }
 
-  function getLicense(license) {
-    const publicDomainStrings = ['pd', 'public domain', 'pdm']
+  function getLicense(licenseRaw) {
+    const publicDomainStrings = ['pd', 'public domain', 'pdm', 'public domain mark']
+    const ccZeroStrings = ['cc0', 'cc zero', 'cc-0', 'cc_0', 'cc-zero']
 
-    return publicDomainStrings.includes(license.toLowerCase()) ? 'PDM' : license
+    let license = licenseRaw
+
+    if (publicDomainStrings.includes(licenseRaw.toLowerCase())) license = 'PDM'
+    if (ccZeroStrings.includes(licenseRaw.toLowerCase())) license = 'CC_0'
+
+    return license
   }
 }
 
