@@ -105,11 +105,11 @@ async function updateMetadata(ocInstance, episodesData) {
       'cm:created_LONG': [Date.parse(episode.created)],
       'cm:modified': [Date.parse(episode.modified)],
       'cm:modified_LONG': [Date.parse(episode.modified)],
-      'ccm:educationallearningresourcetype_DISPLAYNAME': ['Vorlesungsaufzeichnung'],
-      'ccm:version_comment': ['automated import'],
+      'ccm:version_comment': ['Automatischer Import von Opencast'],
+      'cclom:general_keyword': ['Vorlesungsaufzeichnung', 'Opencast'],
       // twillo specific metadata
       'ccm:inhaltstyp': ['Lektion'],
-      'ccm:educationallearningresourcetype': ['Video'],
+      'ccm:educationallearningresourcetype': ['https://w3id.org/kim/hcrt/video'],
       'cclom:interactivitytype': ['Vorlesung'],
       'cclom:typicallearningtime': [episode.extent * 1000]
 
