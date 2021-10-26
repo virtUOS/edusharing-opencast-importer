@@ -6,7 +6,7 @@ const CONF = require('../config/config')
 const { esAxios } = require('../services/es-axios')
 const { ESError } = require('../models/errors')
 
-async function checkExistingCollections(ocInstance) {
+async function checkExistingCollections(orgName) {
   // obj to store all existing ES collections
   let esCollections = []
 
@@ -15,7 +15,7 @@ async function checkExistingCollections(ocInstance) {
     .get(getUrlChildCollections(), getHeadersCheck())
     .then(async (response) => {
       response.data.collections.forEach(async (collection) => {
-        if (collection.title === ocInstance) {
+        if (collection.title === orgName) {
           // safe info
           esCollections = collection
         }

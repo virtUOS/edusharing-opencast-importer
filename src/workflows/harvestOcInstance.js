@@ -84,7 +84,7 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     await esAuth.initEsAuth()
     await esAxiosService.initEsAxios()
 
-    seriesData = await esFolders.createFolderForOcInstances(ocInstance, seriesData)
+    seriesData = await esFolders.createFolderForOcInstances(ocInstanceObj, seriesData)
     storeData()
 
     episodesData = await esChildren.createChildren(ocInstance, episodesData, seriesData)

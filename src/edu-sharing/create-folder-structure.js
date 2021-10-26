@@ -8,7 +8,8 @@ const { ESError, ESPostError } = require('../models/errors')
 const existingNodes = require('../edu-sharing/get-existing-nodes.js')
 const existingCollections = require('../edu-sharing/get-existing-collections.js')
 
-async function createFolderForOcInstances(ocInstance, seriesData) {
+async function createFolderForOcInstances(ocInstanceObj, seriesData) {
+  const ocInstance = ocInstanceObj.domain
   logger.Info('[ES API] Creating Edu-Sharing folder structure for ' + ocInstance)
   const modifiedSeriesData = seriesData
   const headers = getHeadersCreateFolder()
@@ -18,9 +19,9 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
 
   try {
     existingDirs = await existingNodes.checkExistingDirs(ocInstance)
-    existingColls = await existingCollections.checkExistingCollections(ocInstance)
+    existingColls = await existingCollections.checkExistingCollections(ocInstanceObj.orgName)
 
-    await createMainFolder(ocInstance, existingDirs, existingColls)
+    await createMainFolder(ocInstanceObj, existingDirs, existingColls)
 
     if (seriesData.length < 2 && seriesData[0].type === 'metadata') return seriesData
 
@@ -92,18 +93,18 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
     }
   }
 
-  async function createMainFolder(ocInstance, dirs, colls) {
-    if (dirs.name === ocInstance && colls.title === ocInstance) {
+  async function createMainFolder(ocInstanceObj, dirs, colls) {
+    if (dirs.name === ocInstanceObj.domain && colls.title === ocInstanceObj.orgName) {
       addCollectionIdToSeries(colls, 0)
       return addMetadataToSeriesData(dirs)
     } else if (modifiedSeriesData[0].type === 'metadata') {
-      if (dirs.name !== ocInstance) {
+      if (dirs.name !== ocInstanceObj.domain) {
         try {
           await sendPostRequest(
             getUrlCreateFolder(),
-            getBodyCreateFolder(ocInstance),
+            getBodyCreateFolder(ocInstanceObj.domain),
             headers,
-            ocInstance,
+            ocInstanceObj.domain,
             0
           )
         } catch (error) {
@@ -114,13 +115,13 @@ async function createFolderForOcInstances(ocInstance, seriesData) {
           }
         }
       }
-      if (colls.title !== ocInstance) {
+      if (colls.title !== ocInstanceObj.orgName) {
         try {
           await sendPostRequest(
             getUrlCreateCollection(),
-            getBodyCreateCollection(ocInstance),
+            getBodyCreateCollection(ocInstanceObj.orgName),
             headers,
-            ocInstance,
+            ocInstanceObj.domain,
             0
           )
         } catch (error) {
