@@ -5,6 +5,8 @@ const CONF = require('../config/config.js')
 const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
+const parseFullName = require('parse-full-name').parseFullName
+const vCardsJS = require('vcards-js')
 
 async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
@@ -70,6 +72,7 @@ async function updateMetadata(ocInstance, episodesData) {
 
   function getBodyUpdateMetadata(episode) {
     const licenseUpperUnderscore = episode.license.replace(/\s+/g, '-').toUpperCase()
+    const authorName = parseFullName(episode.creator)
 
     return JSON.stringify({
       'cm:name': [episode.filename],
@@ -91,12 +94,27 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:author_freetext': [
         Array.isArray(episode.creators) ? episode.creators.join('; ') : episode.creators
       ],
-      'ccm:lifecyclecontributer_authorFN': [episode.creator],
-      'ccm:lifecyclecontributer_authorVCARD_ORG': [episode.orgName],
-      'ccm:lifecyclecontributer_authorVCARD_URL': [episode.orgUrl],
-      'ccm:metadatacontributer_creatorFN': ['opencast importer'],
-      'ccm:metadatacontributer_creatorVCARD_ORG': [episode.orgName],
-      'ccm:metadatacontributer_creatorVCARD_URL': [episode.orgUrl],
+      'ccm:lifecyclecontributer_author': [
+        parseVCard({
+          title: authorName.title,
+          firstName: authorName.first,
+          middleName: authorName.middle,
+          lastName: authorName.last,
+          formattedName: authorName.formattedName
+        })
+      ],
+      'ccm:lifecyclecontributer_publisher': [
+        parseVCard({
+          organization: episode.organization,
+          url: episode.orgUrl
+        })
+      ],
+      'ccm:metadatacontributer_creator': [
+        parseVCard({
+          firstName: 'Opencast',
+          url: 'https://github.com/virtUOS/edusharing-opencast-importer'
+        })
+      ],
       'ccm:questionsallowed': ['true'],
       'cm:automaticUpdate': ['true'],
       'cm:initialVersion': ['false'],
@@ -112,29 +130,22 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:educationallearningresourcetype': ['https://w3id.org/kim/hcrt/video'],
       'cclom:interactivitytype': ['Vorlesung'],
       'cclom:typicallearningtime': [episode.extent * 1000]
-
-      // 'ccm:lifecyclecontributer_authorVCARD_TITLE': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_SURNAME': ['Nachname'],
-      // 'ccm:lifecyclecontributer_authorVCARD_COUNTRY': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_REGION': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_STREET': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_PLZ': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_GIVENNAME': ['Vorname'],
-      // 'ccm:lifecyclecontributer_authorVCARD_TEL': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_CITY': [''],
-      // 'ccm:lifecyclecontributer_authorVCARD_EMAIL': [''],
-
-      // 'ccm:metadatacontributer_creatorVCARD_REGION': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_PLZ': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_GIVENNAME': ['open'],
-      // 'ccm:metadatacontributer_creatorVCARD_SURNAME': ['cast'],
-      // 'ccm:metadatacontributer_creatorVCARD_COUNTRY': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_TEL': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_STREET': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_CITY': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_EMAIL': [''],
-      // 'ccm:metadatacontributer_creatorVCARD_TITLE': [''],
     }).toString()
+  }
+
+  function parseVCard(obj) {
+    const vCard = vCardsJS()
+
+    vCard.title = obj.title
+    vCard.firstName = obj.firstName
+    vCard.middleName = obj.middleName
+    vCard.lastName = obj.lastName
+    vCard.formattedName = obj.formattedName
+    vCard.organization = obj.organization
+    vCard.url = obj.url
+    vCard.version = '3.0'
+
+    return vCard.getFormattedString()
   }
 
   function getHeadersUpdateMetadata() {
