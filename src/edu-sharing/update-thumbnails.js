@@ -3,6 +3,7 @@
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const { esAxios } = require('../services/es-axios')
+const axios = require('axios').default
 const pLimit = require('p-limit')
 const FormData = require('form-data')
 const { ESError, ESPostError } = require('../models/errors')
@@ -75,7 +76,7 @@ async function updateThumbnails(ocInstance, episodesData) {
   }
 
   async function requestThumbnail(episode) {
-    return await esAxios
+    return await axios
       .get(episode.previewPlayer, { responseType: 'stream' })
       .then(async (response) => {
         if (response && response.status === 200) {

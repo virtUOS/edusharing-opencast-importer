@@ -28,7 +28,7 @@ function initEsAxios() {
         originalRequest._retry = true
         await esAuth.checkEsAuthExpiration()
         originalRequest.headers.Authorization = authObj.type + ' ' + authObj.token_access
-        return axios(originalRequest)
+        return esAxios(originalRequest)
       } else if (error.response.status === 401) {
         throw new ESAuthError('Invalid credentials')
       } else {
