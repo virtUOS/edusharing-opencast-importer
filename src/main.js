@@ -13,7 +13,7 @@
 
   for (let i = 0; i < CONF.oc.instances.length; i++) {
     try {
-      if (await !checkInstanceReachable(i)) continue
+      if (!(await checkInstanceReachable(i))) continue
       await harvester.harvestOcInstance(CONF.oc.instances[i], CONF.oc.forceUpdate)
     } catch (error) {
       logger.Error(error.message)
