@@ -5,7 +5,7 @@ const CONF = require('../config/config.js')
 const axios = require('axios').default
 const { ESAuthError } = require('../models/errors')
 
-const authObj = { type: '', token_access: '' }
+const authObj = { type: '', token_access: '', session: '' }
 
 async function initEsAuth() {
   if (process.env.ES_CLIENT_ID && process.env.ES_CLIENT_SECRET) {
@@ -30,7 +30,8 @@ async function createBearerAuthToken() {
     process.env.ES_PASSWORD
   )
   const url = getUrlOauth()
-  return await sendPostRequest(url, body)
+  await sendPostRequest(url, body)
+  await checkEsAuthExpiration(authObj)
 }
 
 async function sendPostRequest(url, body) {
@@ -104,6 +105,10 @@ async function checkEsAuthExpiration() {
     .then(async (response) => {
       const statusCode = response.data.statusCode
       if (statusCode === 'OK') {
+        if (authObj.type === 'Basic') {
+          const sessionHeader = response.headers['set-cookie'][0]
+          authObj.session = sessionHeader.substring(0, sessionHeader.indexOf(';'))
+        }
         return true
       } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Basic') {
         throw new ESAuthError('Invalid username or password')

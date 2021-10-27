@@ -9,6 +9,7 @@ function initEsAxios() {
   // Interceptor to use and inject newest auth-token
   esAxios.interceptors.request.use(
     (config) => {
+      if (authObj.session !== '') config.headers.Cookie = authObj.session
       config.headers.Authorization = authObj.type + ' ' + authObj.token_access
       return config
     },
