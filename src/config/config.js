@@ -10,7 +10,7 @@ config.es = {
     url: `${process.env.ES_HOST_PROTO}://${process.env.ES_HOST_DOMAIN}`
   },
   settings: {
-    maxPendingPromises: 5
+    maxPendingPromises: 1
   },
   routes: {
     api: '/edu-sharing/rest/node/v1/nodes',
