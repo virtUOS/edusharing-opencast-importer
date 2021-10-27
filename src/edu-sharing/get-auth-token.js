@@ -30,7 +30,6 @@ async function createBearerAuthToken() {
     process.env.ES_PASSWORD
   )
   const url = getUrlOauth()
-
   return await sendPostRequest(url, body)
 }
 
