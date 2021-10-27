@@ -1,6 +1,6 @@
 {
   "name": "edusharing-opencast-importer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "This importer harvests episodes and series (lecture recordings) from Opencast instances and pushes them as external references to an Edu-Sharing instance.",
   "main": "src/main.js",
   "scripts": {
@@ -32,7 +32,7 @@
     "Open Educational Resources",
     "OER"
   ],
-  "author": "Florian Feyen",
+  "author": "virtUOS",
   "license": "GPL-3.0",
   "devDependencies": {
     "axios-debug-log": "^0.8.4",

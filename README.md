@@ -55,8 +55,74 @@ node src/index.js
 ```
 
 ## Config Details
+Config file can be found in `src/config/config.js`. It contains four JSON objects each for Edu-Sharing, Opencast, Logger and Filter functionalities.
 
-Will be added later.
+```js
+config.es = {
+  // Edu-Sharing instance config from .env file
+  host: {
+    // [...]
+  },
+  // Edu-Sharing http requests settings
+  settings: {
+    // Maximal number of http requests send to Edu-Sharing instance at once.
+    // Reduce value to reduce Edu-Sharing load.
+    maxPendingPromises: 5
+  },
+  // Edu-Sharing API routes
+  routes: {
+    // [...]
+  }
+}
+```
+
+```js
+config.oc = {
+  // Force update episodes and series from Opencast instances
+  forceUpdate: false,
+  // Opencast instances from /src/config/config.oc-instances.js
+  instances: ocInstances,
+  // Opencast http requests settings
+  settings: {
+    maxPendingPromises: 2, // Maximal number of simultaneous https requests
+    requestOffset: 5 // Number of requested episodes and series (like pagination)
+  },
+  // Opencast API routes
+  routes: {
+    // [...]
+  },
+  // Storage file names
+  filenames: {
+    episodes: 'ocEpisodes.json',
+    series: 'ocSeries.json',
+    episodesData: 'episodesData.json',
+    seriesData: 'seriesData.json'
+  }
+}
+```
+
+```js
+// Logger settings
+config.logger = {
+  folderPath: './logs/',
+  dateBasedFileNaming: true,
+  fileNamePrefix: 'es-oc-importer_',
+  fileNameExtension: '.log',
+  timeZone: 'Europe/Berlin',
+  dateFormat: 'YYYY-MM-DD',
+  timeFormat: 'HH:mm:ss',
+  logLevel: 'debug',
+  onlyFileLogging: false
+}
+```
+
+```js
+// Filter settings (only harvest episodes with allowed licences)
+// Mind the formatting if you add new licences like CC-BY-NC-ND
+config.filter = {
+  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
+}
+```
 
 ## Import Workflow
 
