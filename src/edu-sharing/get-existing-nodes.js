@@ -12,49 +12,42 @@ async function checkExistingDirs(ocInstance) {
   // obj to store all existing ES diretories
   let esDirectories = []
 
-  // get nodeID of home directory
-  await esAxios
-    .get(getUrlMainFolder(), getHeadersMetadata())
-    .then((response) => {
-      mainDirID = response.data.node.ref.id
-    })
-    .catch((err) => {
-      throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
-    })
+  try {
+    // get nodeID of home directory
+    const homeResponse = await esAxios.get(getUrlMainFolder(), getHeadersMetadata())
+    mainDirID = homeResponse.data.node.ref.id
 
-  // get nodeID of ocInstance directory if it exists
-  await esAxios
-    .get(getUrlChildFolders(mainDirID), getHeadersMetadata())
-    .then(async (response) => {
-      response.data.nodes.forEach(async (node) => {
-        if (node.name === ocInstance && node.isDirectory === true) {
-          // safe info
-          esDirectories = node
-        }
-      })
-      // if ocInstance directory does not exist
-      if (esDirectories.length === 0) return esDirectories
+    // get nodeID of ocInstance directory if it exists
+    const ocInstanceResponse = await esAxios.get(
+      getUrlChildFolders(mainDirID),
+      getHeadersMetadata()
+    )
+    ocInstanceResponse.data.nodes.forEach((node) => {
+      if (node.name === ocInstance && node.isDirectory === true) {
+        // safe info
+        esDirectories = node
+      }
+    })
+    // if ocInstance directory does not exist
+    if (esDirectories.length === 0) return esDirectories
 
-      // get all existing subdirectories + nodeIDs
-      await esAxios
-        .get(getUrlChildFolders(esDirectories.ref.id), getHeadersMetadata())
-        .then(async (response) => {
-          // safe data
-          const subDirs = []
-          response.data.nodes.forEach((node) => {
-            if (node.isDirectory === true) {
-              subDirs.push(node)
-            }
-          })
-          esDirectories.nodes = subDirs
-        })
-        .catch((err) => {
-          throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
-        })
+    // get all existing subdirectories + nodeIDs
+    const ocSubResponse = await esAxios.get(
+      getUrlChildFolders(esDirectories.ref.id),
+      getHeadersMetadata()
+    )
+
+    // safe data
+    const subDirs = []
+    ocSubResponse.data.nodes.forEach((node) => {
+      if (node.isDirectory === true) {
+        subDirs.push(node)
+      }
     })
-    .catch((err) => {
-      throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + err.message)
-    })
+    esDirectories.nodes = subDirs
+  } catch (error) {
+    throw new ESError('[ES API] Error while fetching existent ES-Folder: ' + error.message)
+  }
   return esDirectories
 }
 
