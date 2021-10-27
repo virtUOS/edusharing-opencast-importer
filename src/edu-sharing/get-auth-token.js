@@ -6,6 +6,7 @@ const axios = require('axios').default
 const { ESAuthError } = require('../models/errors')
 
 const authObj = { type: '', token_access: '' }
+
 async function initEsAuth() {
   if (process.env.ES_CLIENT_ID && process.env.ES_CLIENT_SECRET) {
     await createBearerAuthToken()
