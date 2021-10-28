@@ -3,25 +3,24 @@
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const axios = require('axios').default
+const { ESAuthError } = require('../models/errors')
 
-async function getEsAuth() {
-  let authObj = { type: '', token_access: '' }
+const authObj = { type: '', token_access: '', session: '' }
 
+async function initEsAuth() {
   if (process.env.ES_CLIENT_ID && process.env.ES_CLIENT_SECRET) {
-    authObj = await createBearerAuthToken(authObj)
+    await createBearerAuthToken()
   } else if (process.env.ES_USER && process.env.ES_PASSWORD) {
-    authObj = createBasicAuthToken(authObj)
+    await createBasicAuthToken()
   } else {
     logger.Error(
       '[Auth] No Edu-Sharing credentials found. ' +
         'Please add ES_USER and ES_PASSWORD to .env file.'
     )
   }
-
-  return authObj
 }
 
-async function createBearerAuthToken(authObj) {
+async function createBearerAuthToken() {
   authObj.type = 'Bearer'
 
   const body = getBodyOauth(
@@ -31,19 +30,23 @@ async function createBearerAuthToken(authObj) {
     process.env.ES_PASSWORD
   )
   const url = getUrlOauth()
-
-  return await sendPostRequest(url, body, authObj)
+  await sendPostRequest(url, body)
+  await checkEsAuthExpiration(authObj)
 }
 
-async function sendPostRequest(url, body, authObj) {
+async function sendPostRequest(url, body) {
   return await axios
     .post(url, body)
     .then((response) => {
-      if (response.status === 200) return handlePostRequestOauth(response, authObj)
+      if (response.status === 200) return handlePostRequestOauth(response)
     })
     .catch((error) => {
-      if (error.code === 'ECONNREFUSED') return createBasicAuthToken(authObj)
-      logger.Error('[Auth] ' + error)
+      logger.Error(
+        '[ES AUTH] Could not create bearer token (' +
+          error.message +
+          ') Retrying with basic token...'
+      )
+      return createBasicAuthToken()
     })
 }
 
@@ -65,29 +68,86 @@ function getBodyOauth(esClientId, esClientSecret, esUser, esPassword) {
   )
 }
 
-function handlePostRequestOauth(res, authObj) {
+function handlePostRequestOauth(res) {
   if (res.data.access_token) authObj.token_access = res.data.access_token
   if (res.data.refresh_token) authObj.token_refresh = res.data.refresh_token
   if (res.data.expires_in) authObj.token_expires_in = res.data.expires_in
   authObj.token_created = new Date()
-
-  return authObj
 }
 
-function createBasicAuthToken(authObj) {
+async function createBasicAuthToken() {
   try {
     authObj.type = 'Basic'
     authObj.token_access = getBasicAuthBase64String(process.env.ES_USER, process.env.ES_PASSWORD)
+    await checkEsAuthExpiration(authObj)
   } catch (error) {
-    logger.Error('[Auth] ' + error)
+    throw new ESAuthError(error.message)
   }
-  return authObj
+}
+
+async function checkEsAuthExpiration() {
+  const url = CONF.es.host.url + CONF.es.routes.validation
+
+  const headers = {
+    Accept: 'application/json',
+    'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
+    'Accept-Encoding': 'gzip, deflate',
+    'Content-Type': 'application/json',
+    locale: 'de_DE',
+    Authorization: authObj.type + ' ' + authObj.token_access,
+    Connection: 'keep-alive',
+    Pragma: 'no-cache',
+    'Cache-Control': 'no-cache'
+  }
+
+  return await axios
+    .get(url, { headers })
+    .then(async (response) => {
+      const statusCode = response.data.statusCode
+      if (statusCode === 'OK') {
+        if (authObj.type === 'Basic') {
+          const sessionHeader = response.headers['set-cookie'][0]
+          authObj.session = sessionHeader.substring(0, sessionHeader.indexOf(';'))
+        }
+        return true
+      } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Basic') {
+        throw new ESAuthError('Invalid username or password')
+      } else if (statusCode === 'INVALID_CREDENTIALS' && authObj.type === 'Bearer') {
+        await refreshOAuth()
+      } else {
+        throw new ESAuthError(response.statusCode)
+      }
+    })
+    .catch((error) => {
+      throw new ESAuthError(error.message)
+    })
 }
 
 function getBasicAuthBase64String(esUser, esPassword) {
   return Buffer.from(esUser + ':' + esPassword).toString('base64')
 }
 
+function getBodyOauthRefresh() {
+  return (
+    'grant_type=refresh_token&' +
+    'client_id=' +
+    process.env.ES_CLIENT_ID +
+    '&client_secret=' +
+    process.env.ES_CLIENT_SECRET +
+    '&refresh_token=' +
+    authObj.token_refresh
+  )
+}
+
+async function refreshOAuth() {
+  const url = getUrlOauth()
+  const body = getBodyOauthRefresh()
+
+  return await sendPostRequest(url, body)
+}
+
 module.exports = {
-  getEsAuth
+  initEsAuth,
+  checkEsAuthExpiration,
+  authObj
 }

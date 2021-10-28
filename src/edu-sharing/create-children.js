@@ -2,53 +2,70 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
-const axios = require('axios').default
+const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
+const { ESError, ESPostError } = require('../models/errors')
 
-async function createChildren(ocInstance, episodesData, seriesData, authObj) {
+async function createChildren(ocInstance, episodesData, seriesData) {
   logger.Info('[ES API] Creating children per episode for ' + ocInstance)
 
-  return await returnReqsAsPromiseArray(authObj, episodesData, seriesData)
-    .then(async (res) => {
-      return episodesData
-    })
-    .catch((error) => logger.Error(error))
+  try {
+    await returnReqsAsPromiseArray(episodesData, seriesData)
+    return episodesData
+  } catch (error) {
+    if (error instanceof ESError) {
+      throw error
+    } else throw new ESError('[ES API] Error while creating children: ' + error.message)
+  }
 
-  async function returnReqsAsPromiseArray(authObj, episodesData, seriesData) {
+  async function returnReqsAsPromiseArray(episodesData, seriesData) {
     const limit = pLimit(CONF.es.settings.maxPendingPromises)
 
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
-      if (episodesData[i].metadata) continue
-      if (episodesData[i].nodeId) continue
+      if (episodesData[i].type === 'metadata') continue
       requests.push(
         limit(() =>
           sendPostRequest(
             getUrlCreateChildren(episodesData[i], seriesData),
-            getBodyCreateFolder(episodesData[i].url),
-            getHeadersCreateFolder(authObj),
+            getBodyCreateFolder(episodesData[i]),
+            getHeadersCreateFolder(),
             i
           ).catch((error) => {
-            return error
+            if (error instanceof ESPostError) {
+              throw error
+            } else throw new ESError('[ES API] Error while creating children: ' + error.message)
           })
         )
       )
     }
 
-    return Promise.all(requests)
+    await Promise.allSettled(requests)
   }
 
   async function sendPostRequest(url, body, headers, index) {
-    return await axios
-      .post(url, body, headers)
-      .then((response) => {
-        if (response.status === 200) {
-          return handleResponse(response.data.node, index)
+    try {
+      const response = await esAxios.post(url, body, headers)
+      if (response.status === 200) {
+        await handleResponse(response.data.node, index)
+        // add to collection
+        await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+      }
+    } catch (error) {
+      // episode already exists
+      if (error.response.status === 409) {
+        try {
+          await esAxios.put(getUrlUpdateCollection(episodesData[index], seriesData))
+        } catch (error) {
+          // episode is already added to collection
+          if (error.response.status !== 409) {
+            throw new ESPostError('Could not add episode to collection', error.response.status)
+          }
         }
-      })
-      .catch((error) => {
-        logger.Error('[ES API] ' + error)
-      })
+      } else {
+        throw new ESPostError('Could not create episode', error.response.status)
+      }
+    }
   }
 
   function getUrlCreateChildren(episode, seriesData) {
@@ -63,10 +80,23 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
     )
   }
 
+  function getUrlUpdateCollection(episode, seriesData) {
+    return (
+      CONF.es.host.url +
+      CONF.es.routes.collections +
+      CONF.es.routes.baseFolder +
+      '/' +
+      getParentCollection(episode, seriesData) +
+      '/references' +
+      '/' +
+      episode.nodeId
+    )
+  }
+
   function getParamsCreateFolder() {
     return new URLSearchParams({
       type: 'ccm:io',
-      renameIfExists: true,
+      renameIfExists: false,
       assocType: '',
       versionComment: 'MAIN_FILE_UPLOAD'
     })
@@ -77,18 +107,28 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
       const seriesObjFound = seriesData.find((series) => series.id === episode.isPartOf)
       return seriesObjFound ? seriesObjFound.nodeId : seriesData[0].metadata.nodeId
     } else {
-      return seriesData[0].metadata.nodeId
+      return seriesData[0].nodeId
     }
   }
 
-  function getBodyCreateFolder(urlContent) {
+  function getParentCollection(episode, seriesData) {
+    if (episode.isPartOf) {
+      const seriesObjFound = seriesData.find((series) => series.id === episode.isPartOf)
+      return seriesObjFound ? seriesObjFound.collectionId : seriesData[0].metadata.collectionId
+    } else {
+      return seriesData[0].collectionId
+    }
+  }
+
+  function getBodyCreateFolder(episodeData) {
     return JSON.stringify({
-      'ccm:wwwurl': [urlContent],
+      'cm:name': [episodeData.filename],
+      'ccm:wwwurl': [episodeData.url],
       'ccm:linktype': ['USER_GENERATED']
     }).toString()
   }
 
-  function getHeadersCreateFolder(authObj) {
+  function getHeadersCreateFolder() {
     return {
       headers: {
         Accept: 'application/json',
@@ -96,7 +136,6 @@ async function createChildren(ocInstance, episodesData, seriesData, authObj) {
         'Accept-Encoding': 'gzip, deflate',
         'Content-Type': 'application/json',
         locale: 'de_DE',
-        Authorization: authObj.type + ' ' + authObj.token_access,
         Connection: 'keep-alive',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache'

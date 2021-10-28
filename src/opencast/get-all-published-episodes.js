@@ -3,8 +3,10 @@ const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
+const { OCError, OCGetError } = require('../models/errors')
 
-async function start(ocEpisodes, force, ocInstance) {
+async function start(ocEpisodes, force, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
   if (force) logger.Info('[OC Episodes] Force episodes GET requests for ' + ocInstance)
   if (ocEpisodes && !force) {
     if (ocEpisodes.length > 0) {
@@ -18,8 +20,8 @@ async function start(ocEpisodes, force, ocInstance) {
   const episodesIds = new Set()
 
   const url = getUrlForRequest(
-    CONF.oc.instances[0].protocol,
-    CONF.oc.instances[0].domain,
+    ocInstanceObj.protocol,
+    ocInstance,
     CONF.oc.routes.getAllEpisodes,
     CONF.oc.settings.requestOffset
   )
@@ -45,7 +47,9 @@ async function start(ocEpisodes, force, ocInstance) {
       .then((response) => {
         return response.data['search-results']
       })
-      .catch((error) => logger.Error(error))
+      .catch((error) => {
+        throw new OCGetError(error.message, error.code)
+      })
   }
 
   async function handleResponse(data) {
@@ -53,6 +57,7 @@ async function start(ocEpisodes, force, ocInstance) {
   }
 
   async function pushEpisodesToArray(results) {
+    if (!Array.isArray(results)) results = [results]
     for (let i = 0; i < results.length; i++) {
       if (!episodesIds.has(results[i].id)) {
         episodesIds.add(results[i].id)
@@ -66,18 +71,22 @@ async function start(ocEpisodes, force, ocInstance) {
     const requests = []
     const pageMax = instanceMetadata.pageMax ? instanceMetadata.pageMax : 1
 
-    for (let i = 0; i < pageMax; i++) {
+    for (let i = 0; i <= pageMax; i++) {
       requests.push(
         limit(() =>
           sendGetRequest(url, i * CONF.oc.settings.requestOffset)
             .then(async (data) => {
               if (data.result) {
                 return await handleResponse(data)
-              } else {
-                logger.Info('No public episodes ( ' + url + ')')
               }
             })
-            .catch((error) => logger.Error(error))
+            .catch((error) => {
+              if (error instanceof OCGetError) {
+                throw error
+              } else {
+                throw new OCError('[OC API] Error while receiving episode data: ' + error.message)
+              }
+            })
         )
       )
     }
@@ -95,9 +104,14 @@ async function start(ocEpisodes, force, ocInstance) {
     })
     .then(() => {
       logger.Info('[OC Episodes] All promissed resolved: ' + ocInstance)
+      if (episodes.length < 1) logger.Info('[OC Episodes] No public episodes found: ' + ocInstance)
       return episodes
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => {
+      if (error instanceof OCError) {
+        throw error
+      } else throw new OCError('[OC API] Error while receiving episode data: ' + error.message)
+    })
 }
 
 module.exports.start = start

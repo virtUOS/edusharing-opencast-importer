@@ -2,9 +2,11 @@
   "env": {
     "browser": true,
     "commonjs": true,
-    "es6": true
+    "es6": true,
+    "jest/globals": true
   },
   "extends": ["standard"],
+  "plugins": ["jest"],
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly"
@@ -14,6 +16,7 @@
   },
   "rules": {
     "max-len": ["error", { "code": 100 ,  "tabWidth": 2, "ignoreComments": true }],
-    "space-before-function-paren": ["error", { "anonymous": "never", "named": "never", "asyncArrow": "always" }]
+    "space-before-function-paren": ["error", { "anonymous": "never", "named": "never", "asyncArrow": "always" }],
+    "array-callback-return": "off"
   }
 }

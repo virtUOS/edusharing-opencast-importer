@@ -15,11 +15,14 @@ config.es = {
   routes: {
     api: '/edu-sharing/rest/node/v1/nodes',
     oauth: '/edu-sharing/oauth2/token',
-    baseFolder: '/-home-'
+    baseFolder: '/-home-',
+    validation: '/edu-sharing/rest/authentication/v1/validateSession',
+    collections: '/edu-sharing/rest/collection/v1/collections'
   }
 }
 
 config.oc = {
+  forceUpdate: false,
   instances: ocInstances,
   settings: {
     maxPendingPromises: 2,
@@ -50,7 +53,7 @@ config.logger = {
 }
 
 config.filter = {
-  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD']
+  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
 }
 
 module.exports = config

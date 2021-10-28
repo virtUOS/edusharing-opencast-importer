@@ -3,8 +3,10 @@ const axios = require('axios').default
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const pLimit = require('p-limit')
+const { OCError, OCGetError } = require('../models/errors')
 
-async function start(episodes, ocSeries, force, ocInstance) {
+async function start(episodes, ocSeries, force, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
   if (force) logger.Info('[OC Series] Force sending GET requests for ' + ocInstance)
   if (ocSeries && !force) {
     if (ocSeries.length > 0) {
@@ -28,11 +30,7 @@ async function start(episodes, ocSeries, force, ocInstance) {
     return proto + '://' + domain + route + '?sort=DATE_CREATED'
   }
 
-  const url = getUrlForRequest(
-    CONF.oc.instances[0].protocol,
-    CONF.oc.instances[0].domain,
-    CONF.oc.routes.getSeriesById
-  )
+  const url = getUrlForRequest(ocInstanceObj.protocol, ocInstance, CONF.oc.routes.getSeriesById)
 
   async function sendGetRequest(url, seriesId) {
     url = url + '&id=' + seriesId
@@ -42,7 +40,9 @@ async function start(episodes, ocSeries, force, ocInstance) {
       .then((response) => {
         return response.data['search-results']
       })
-      .catch((error) => logger.Error(error))
+      .catch((error) => {
+        throw new OCGetError(error.message, error.code)
+      })
   }
 
   async function getSeriesById(url, seriesIds) {
@@ -60,7 +60,13 @@ async function start(episodes, ocSeries, force, ocInstance) {
                 return data.result
               }
             })
-            .catch((error) => logger.Error(error))
+            .catch((error) => {
+              if (error instanceof OCGetError) {
+                throw error
+              } else {
+                throw new OCError('[OC API] Error while receiving series data: ' + error.message)
+              }
+            })
         )
       )
     }
@@ -75,7 +81,11 @@ async function start(episodes, ocSeries, force, ocInstance) {
       logger.Info('[OC Series] All promissed resolved: ' + ocInstance)
       return seriesData.filter((value) => value !== undefined)
     })
-    .catch((error) => logger.Error(error))
+    .catch((error) => {
+      if (error instanceof OCError) {
+        throw error
+      } else throw new OCError('[OC API] Error while receiving series data: ' + error.message)
+    })
 }
 
 module.exports.start = start

@@ -3,11 +3,13 @@
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
 const { esAxios } = require('../services/es-axios')
+const axios = require('axios').default
 const pLimit = require('p-limit')
+const FormData = require('form-data')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function updatePermissions(ocInstance, episodesData) {
-  logger.Info('[ES API] Update permissions (public) per episode for ' + ocInstance)
+async function updateThumbnails(ocInstance, episodesData) {
+  logger.Info('[ES API] Update episodes thumbnails for ' + ocInstance)
 
   return await returnReqsAsPromiseArray(episodesData)
     .then(async (res) => {
@@ -16,7 +18,7 @@ async function updatePermissions(ocInstance, episodesData) {
     .catch((error) => {
       if (error instanceof ESError) {
         throw error
-      } else throw new ESError('[ES API] Error while updating permissions: ' + error.message)
+      } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
     })
 
   async function returnReqsAsPromiseArray(episodesData) {
@@ -25,25 +27,28 @@ async function updatePermissions(ocInstance, episodesData) {
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
       if (!episodesData[i].nodeId) continue
-      if (episodesData[i].published) continue
+      if (!episodesData[i].previewPlayer) continue
+
+      const formData = await requestThumbnail(episodesData[i])
+      if (!formData) continue
 
       requests.push(
         limit(() =>
           sendPostRequest(
-            getUrlUpdatePermissions(episodesData[i]),
-            getBodyUpdatePermissions(episodesData[i]),
-            getHeadersUpdatePermissions(),
+            getUrlUpdateThumbnail(episodesData[i]),
+            formData,
+            getHeadersUpdateThumbnail(formData),
             i
           ).catch((error) => {
             if (error instanceof ESPostError) {
               throw error
-            } else throw new ESError('[ES API] Error while updating permissions: ' + error.message)
+            } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
           })
         )
       )
     }
 
-    return Promise.all(requests)
+    return Promise.allSettled(requests)
   }
 
   async function sendPostRequest(url, body, headers, index) {
@@ -51,7 +56,7 @@ async function updatePermissions(ocInstance, episodesData) {
       .post(url, body, headers)
       .then((response) => {
         if (response.status === 200) {
-          return handleResponse(index)
+          return true
         }
       })
       .catch((error) => {
@@ -59,39 +64,39 @@ async function updatePermissions(ocInstance, episodesData) {
       })
   }
 
-  function getUrlUpdatePermissions(episode) {
+  function getUrlUpdateThumbnail(episode) {
     return (
       CONF.es.host.url +
       CONF.es.routes.api +
       CONF.es.routes.baseFolder +
       '/' +
       episode.nodeId +
-      '/permissions'
+      '/preview?mimetype=image/jpeg'
     )
   }
 
-  function getBodyUpdatePermissions(episode) {
-    return JSON.stringify({
-      inherited: true,
-      permissions: [
-        {
-          authority: {
-            authorityName: 'GROUP_EVERYONE',
-            authorityType: 'EVERYONE'
-          },
-          permissions: ['Consumer']
+  async function requestThumbnail(episode) {
+    return await axios
+      .get(episode.previewPlayer, { responseType: 'stream' })
+      .then(async (response) => {
+        if (response && response.status === 200) {
+          const formData = new FormData()
+          formData.append('image', response.data)
+          return formData
         }
-      ]
-    }).toString()
+      })
+      .catch((error) => {
+        throw new ESError(error.message, error.code)
+      })
   }
 
-  function getHeadersUpdatePermissions() {
+  function getHeadersUpdateThumbnail(formData) {
     return {
       headers: {
         Accept: 'application/json',
         'Accept-Language': 'de-DE,en;q=0.7,en-US;q=0.3',
         'Accept-Encoding': 'gzip, deflate',
-        'Content-Type': 'application/json',
+        'Content-Type': `multipart/form-data; boundary=${formData._boundary}`,
         locale: 'de_DE',
         Connection: 'keep-alive',
         Pragma: 'no-cache',
@@ -99,12 +104,8 @@ async function updatePermissions(ocInstance, episodesData) {
       }
     }
   }
-
-  async function handleResponse(index) {
-    if (!episodesData[index].published) episodesData[index].published = true
-  }
 }
 
 module.exports = {
-  updatePermissions
+  updateThumbnails
 }

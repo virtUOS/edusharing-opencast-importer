@@ -1,6 +1,8 @@
 'use strict'
 
-function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, seriesData) {
+function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, seriesData, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
+  if (series.length === 0 && seriesData.length === 0) return updateMetadata([])
   if (!seriesData || seriesData.length <= series.length) {
     const uniqueSeriesIds = getUniqueSeriesIds(series)
     const seriesIdsObjects = createObjectsFromSeriesIds(uniqueSeriesIds)
@@ -9,7 +11,8 @@ function getSortedEpisodesPerSeriesIds(series, filteredEpisodes, ocInstance, ser
       sortedEpisodesPerSeries,
       series,
       ocInstance,
-      seriesData
+      seriesData,
+      ocInstanceObj
     )
     return updateMetadata(sortedSeriesData)
   } else {
@@ -50,22 +53,27 @@ function sortEpisodesPerSeriesId(seriesIdsObjects, episodes) {
   return sortedEpisodes.filter((series) => series.episodes.length > 0)
 }
 
-function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesData) {
+function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesData, ocInstanceObj) {
   return sortedEpisodesPerSeries.map((series) => {
     const existingSeries = getExistingSeries(seriesData, series.id)
     const currentOcSeries = ocSeries[ocSeries.findIndex((ocSeries) => ocSeries.id === series.id)]
 
     if (currentOcSeries) {
       series.type = 'series'
-      if (currentOcSeries.dcTitle) series.title = currentOcSeries.dcTitle
-      if (currentOcSeries.dcDescription) series.description = currentOcSeries.dcDescription
-      if (currentOcSeries.dcPublisher) series.publisher = currentOcSeries.dcPublisher
-      if (currentOcSeries.dcCreated) series.created = currentOcSeries.dcCreated
-      if (currentOcSeries.dcContributor) series.contributor = currentOcSeries.dcContributor
-      if (currentOcSeries.dcLanguage) series.language = currentOcSeries.dcLanguage
-      if (currentOcSeries.keywords.length > 0) series.keywords = currentOcSeries.keywords
-      if (currentOcSeries.mediaType) series.mediaType = currentOcSeries.mediaType
-      if (currentOcSeries.modified) series.modified = currentOcSeries.modified
+      series.orgName = ocInstanceObj.orgName || ''
+      series.orgUrl = ocInstanceObj.orgUrl || ''
+      series.title = currentOcSeries.dcTitle || ''
+      series.subject = currentOcSeries.dcSubject || ''
+      series.creator = currentOcSeries.dcCreator || ''
+      series.description = currentOcSeries.dcDescription || ''
+      series.publisher = currentOcSeries.dcPublisher || ''
+      series.rightsholder = currentOcSeries.dcRightsHolder || ''
+      series.created = currentOcSeries.dcCreated || ''
+      series.contributor = currentOcSeries.dcContributor || ''
+      series.language = currentOcSeries.dcLanguage || ''
+      series.keywords = currentOcSeries.keywords || []
+      series.mediaType = currentOcSeries.mediaType || ''
+      series.modified = currentOcSeries.modified || ''
       series.from = ocInstance
       series.lastUpdated = new Date()
       if (existingSeries) {
@@ -83,26 +91,43 @@ function applySeriesData(sortedEpisodesPerSeries, ocSeries, ocInstance, seriesDa
 }
 
 function updateMetadata(data) {
-  if (!data[0].metadata) {
-    const metadata = { metadata: {} }
-    if (!metadata.metadata.firstCrawled) metadata.metadata.firstCrawled = new Date()
-    data.unshift(metadata)
+  const metadataIndex = getMetadataIndex(data)
+  if (data.length === 0) {
+    data.unshift({ type: 'metadata' })
+  } else if (metadataIndex === -1) {
+    data.unshift({ type: 'metadata' })
+  } else if (metadataIndex > 0) {
+    data = moveObjToFirstPosition(data, metadataIndex)
   }
 
-  data[0].metadata.lastUpdated = new Date()
+  return setMetadataDates(data)
+}
+
+function getMetadataIndex(data) {
+  return data.findIndex((object) => object.type === 'metadata')
+}
+
+function moveObjToFirstPosition(data, index) {
+  const metadataObj = data[index]
+  data.unshift(metadataObj)
+  data.splice(index)
+  return data
+}
+
+function setMetadataDates(data) {
+  if (!data[0].firstCrawled) data[0].firstCrawled = new Date()
+  if (!data[0].nodeId) data[0].nodeId = undefined
+  if (!data[0].parentId) data[0].parentId = undefined
+  data[0].lastUpdated = new Date()
 
   return data
 }
 
-function getEpisodeDataObject(ocEpisodes, ocInstance, episodesData) {
-  if (!episodesData || episodesData.length <= ocEpisodes.length) {
-    const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
-    const sortedEpisodes = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-    const episodes = applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData)
-    return updateMetadata(episodes)
-  } else {
-    return updateMetadata(episodesData)
-  }
+function getEpisodesDataObject(ocEpisodes, episodesData, ocInstanceObj) {
+  const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
+  const episodeObjs = createObjectsFromEpisodeIds(uniqueEpisodeIds)
+  const episodes = applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj)
+  return updateMetadata(episodes)
 }
 
 function getUniqueEpisodeIds(filteredEpisodes) {
@@ -121,30 +146,54 @@ function createObjectsFromEpisodeIds(uniqueEpisodeIds) {
   })
 }
 
-function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) {
-  return sortedEpisodes.map((episode) => {
+function applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj) {
+  const ocInstance = ocInstanceObj.domain
+  return episodeObjs.map((episode) => {
     const existingEpisode = getExistingEpisode(episodesData, episode.id)
-    const currentOcEpisode =
-      ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
 
-    if (currentOcEpisode) {
-      episode.type = 'episode'
-      if (currentOcEpisode.dcExtent) episode.extent = currentOcEpisode.dcExtent
-      if (currentOcEpisode.dcTitle) episode.title = currentOcEpisode.dcTitle
-      if (currentOcEpisode.dcDescription) episode.description = currentOcEpisode.dcDescription
-      if (currentOcEpisode.dcCreator) episode.creator = currentOcEpisode.dcCreator
-      if (currentOcEpisode.dcCreated) episode.created = currentOcEpisode.dcCreated
-      if (currentOcEpisode.dcLicense) episode.license = currentOcEpisode.dcLicense
-      if (currentOcEpisode.dcIsPartOf) episode.isPartOf = currentOcEpisode.dcIsPartOf
-      if (currentOcEpisode.mediaType) episode.mediaType = currentOcEpisode.mediaType
-      if (currentOcEpisode.keywords.length > 0) episode.keywords = currentOcEpisode.keywords
-      episode.url = createEpisodeUrl(ocInstance, episode.id)
-      if (currentOcEpisode.modified) episode.modified = currentOcEpisode.modified
-      episode.from = ocInstance
-      episode.lastUpdated = new Date()
-      if (existingEpisode) {
-        if (existingEpisode.nodeId) episode.nodeId = existingEpisode.nodeId
-        if (existingEpisode.parentId) episode.parentId = existingEpisode.parentId
+    if (existingEpisode) {
+      existingEpisode.lastUpdated = new Date()
+      return existingEpisode
+    } else {
+      const newOcEpisode =
+        ocEpisodes[ocEpisodes.findIndex((ocEpisode) => ocEpisode.id === episode.id)]
+
+      if (newOcEpisode) {
+        episode.type = 'episode'
+        episode.orgName = ocInstanceObj.orgName || ''
+        episode.orgUrl = ocInstanceObj.orgUrl || ''
+        episode.extent = newOcEpisode.dcExtent || 0
+        episode.title = newOcEpisode.dcTitle || ''
+        episode.description = newOcEpisode.dcDescription || ''
+        episode.subject = newOcEpisode.dcSubject || ''
+        episode.spatial = newOcEpisode.dcSpatial || ''
+        episode.rghtsholder = newOcEpisode.dcRightsHolder || ''
+        episode.creator = newOcEpisode.dcCreator || ''
+        episode.creators = newOcEpisode.mediapackage.creators
+          ? newOcEpisode.mediapackage.creators.creator
+          : []
+        episode.contributor = newOcEpisode.dcContributor || ''
+        episode.contributors = newOcEpisode.mediapackage.contributors
+          ? newOcEpisode.mediapackage.contributors.contributor
+          : []
+        episode.created = newOcEpisode.dcCreated || ''
+        episode.license = getLicense(newOcEpisode.dcLicense) || ''
+        episode.isPartOf = newOcEpisode.dcIsPartOf || ''
+        episode.mediaType = newOcEpisode.mediaType || ''
+        episode.language = newOcEpisode.dcLanguage || ''
+        episode.keywords = newOcEpisode.keywords || []
+        episode.url = createEpisodeUrl(ocInstance, episode.id)
+        episode.modified = newOcEpisode.modified || ''
+        episode.from = ocInstance
+        episode.lastUpdated = new Date()
+        episode.previewPlayer = getPreviewUrl('presenter/player+preview', newOcEpisode)
+        episode.previewSearch = getPreviewUrl('presenter/search+preview', newOcEpisode)
+        episode.filename = `${episode.id}-${episode.title
+          .replace(/\s+/g, '-')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[(),!?=:;/]/g, '')
+          .toLowerCase()
+          .substring(0, 40)}`
       }
 
       return episode
@@ -158,11 +207,32 @@ function applyEpisodeData(sortedEpisodes, ocEpisodes, ocInstance, episodesData) 
   function createEpisodeUrl(ocInstance, episodeId) {
     return `https://${ocInstance}/play/${episodeId}`
   }
+
+  function getPreviewUrl(previewType, newOcEpisode) {
+    const attachment = newOcEpisode.mediapackage.attachments.attachment
+    for (let i = 0; i < attachment.length; i++) {
+      if (attachment[i].type === previewType) {
+        return attachment[i].url
+      }
+    }
+  }
+
+  function getLicense(licenseRaw) {
+    const publicDomainStrings = ['pd', 'public domain', 'pdm', 'public domain mark']
+    const ccZeroStrings = ['cc0', 'cc zero', 'cc-0', 'cc_0', 'cc-zero']
+
+    let license = licenseRaw
+
+    if (publicDomainStrings.includes(licenseRaw.toLowerCase())) license = 'PDM'
+    if (ccZeroStrings.includes(licenseRaw.toLowerCase())) license = 'CC_0'
+
+    return license
+  }
 }
 
 module.exports = {
   getSortedEpisodesPerSeriesIds,
-  getEpisodesDataObject: getEpisodeDataObject,
+  getEpisodesDataObject,
   applySeriesData,
   applyEpisodeData
 }

@@ -35,9 +35,11 @@ ES_USER=opencast
 ES_PASSWORD=opencast
 ```
 4. Rename `config.oc-instances.js.template` to `config.oc-instances.js` in folder `./src/config/`
-5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (protocal, domain). <br /><strong>LIMITATION: Currently, only the first object in the instance array is used..</strong>
+5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes.<br />
 ```js
 {
+  orgName: 'Opencast',
+  orgUrl: 'https://opencast.org',
   protocol: 'https',
   domain: 'develop.opencast.org'
 }
@@ -53,8 +55,74 @@ node src/index.js
 ```
 
 ## Config Details
+Config file can be found in `src/config/config.js`. It contains four JSON objects each for Edu-Sharing, Opencast, Logger and Filter functionalities.
 
-Will be added later.
+```js
+config.es = {
+  // Edu-Sharing instance config from .env file
+  host: {
+    // [...]
+  },
+  // Edu-Sharing http requests settings
+  settings: {
+    // Maximal number of http requests send to Edu-Sharing instance at once.
+    // Reduce value to reduce Edu-Sharing load.
+    maxPendingPromises: 5
+  },
+  // Edu-Sharing API routes
+  routes: {
+    // [...]
+  }
+}
+```
+
+```js
+config.oc = {
+  // Force update episodes and series from Opencast instances
+  forceUpdate: false,
+  // Opencast instances from /src/config/config.oc-instances.js
+  instances: ocInstances,
+  // Opencast http requests settings
+  settings: {
+    maxPendingPromises: 2, // Maximal number of simultaneous https requests
+    requestOffset: 5 // Number of requested episodes and series (like pagination)
+  },
+  // Opencast API routes
+  routes: {
+    // [...]
+  },
+  // Storage file names
+  filenames: {
+    episodes: 'ocEpisodes.json',
+    series: 'ocSeries.json',
+    episodesData: 'episodesData.json',
+    seriesData: 'seriesData.json'
+  }
+}
+```
+
+```js
+// Logger settings
+config.logger = {
+  folderPath: './logs/',
+  dateBasedFileNaming: true,
+  fileNamePrefix: 'es-oc-importer_',
+  fileNameExtension: '.log',
+  timeZone: 'Europe/Berlin',
+  dateFormat: 'YYYY-MM-DD',
+  timeFormat: 'HH:mm:ss',
+  logLevel: 'debug',
+  onlyFileLogging: false
+}
+```
+
+```js
+// Filter settings (only harvest episodes with allowed licences)
+// Mind the formatting if you add new licences like CC-BY-NC-ND
+config.filter = {
+  allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
+}
+```
 
 ## Import Workflow
 
@@ -65,7 +133,8 @@ Will be added later.
 5. Create folder structure in Edu-Sharing user workspace (a folder for every Opencast series)
 6. Create a node/children for every episode (Alfresco API)
 7. Update metadata for all nodes/childrens
-8. Set permissions for all nodes/childrens to public
+8. Update thumbnails/preview images for episodes nodes/children
+9. Set permissions for all nodes/childrens to public
 
 ## Develop
 
@@ -94,10 +163,6 @@ npm run lint:fix
 
 * www: [virtuos.uni-osnabrueck.de](https://virtuos.uni-osnabrueck.de/)
 * Github: [@virtUOS](https://github.com/virtUOS)
-
-👤 **Florian Feyen**
-
-* Github: [@ffeyen](https://github.com/ffeyen)
 
 ## 🤝 Contributing
 
