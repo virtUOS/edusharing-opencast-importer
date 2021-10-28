@@ -210,11 +210,13 @@ async function createFolderForOcInstances(ocInstanceObj, seriesData) {
 
   function getBodyCreateCollection(modifiedSeriesData) {
     return JSON.stringify({
-      color: '#00d084',
-      description: modifiedSeriesData.description || '',
-      scope: 'EDU_ALL',
-      title: modifiedSeriesData.title || modifiedSeriesData,
-      type: 'default'
+      collection: {
+        color: '#00d084',
+        description: modifiedSeriesData.description || '',
+        scope: 'EDU_ALL',
+        type: 'default'
+      },
+      title: modifiedSeriesData.title || modifiedSeriesData
     }).toString()
   }
 
