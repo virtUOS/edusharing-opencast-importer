@@ -10,37 +10,34 @@ async function checkExistingCollections(orgName) {
   // obj to store all existing ES collections
   let esCollections = []
 
-  // get ID of ocInstance collection if it exists
-  await esAxios
-    .get(getUrlChildCollections(), getHeadersCheck())
-    .then(async (response) => {
-      response.data.collections.forEach(async (collection) => {
-        if (collection.title === orgName) {
-          // safe info
-          esCollections = collection
-        }
-      })
-      // if ocInstance collection does not exist
-      if (esCollections.length === 0) return esCollections
+  try {
+    // get ID of ocInstance collection if it exists
+    const ocCollResponse = await esAxios.get(getUrlChildCollections(), getHeadersCheck())
+    ocCollResponse.data.collections.forEach((collection) => {
+      if (collection.title === orgName) {
+        // safe info
+        esCollections = collection
+      }
+    })
 
-      // get all existing subcollections + IDs
-      await esAxios
-        .get(getUrlChildCollections(esCollections.ref.id), getHeadersCheck())
-        .then(async (response) => {
-          // safe data
-          const subColls = []
-          response.data.collections.forEach((collection) => {
-            subColls.push(collection)
-          })
-          esCollections.collections = subColls
-        })
-        .catch((err) => {
-          throw new ESError('[ES API] Error while fetching existent ES-Collection: ' + err.message)
-        })
+    // if ocInstance collection does not exist
+    if (esCollections.length === 0) return esCollections
+
+    // get all existing subcollections + IDs
+    const ocSubResponse = await esAxios.get(
+      getUrlChildCollections(esCollections.ref.id),
+      getHeadersCheck()
+    )
+
+    // safe data
+    const subColls = []
+    ocSubResponse.data.collections.forEach((collection) => {
+      subColls.push(collection)
     })
-    .catch((err) => {
-      throw new ESError('[ES API] Error while fetching existent ES-Collection: ' + err.message)
-    })
+    esCollections.collections = subColls
+  } catch (error) {
+    throw new ESError('[ES API] Error while fetching existent ES-Collection: ' + error.message)
+  }
   return esCollections
 }
 

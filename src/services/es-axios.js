@@ -9,6 +9,7 @@ function initEsAxios() {
   // Interceptor to use and inject newest auth-token
   esAxios.interceptors.request.use(
     (config) => {
+      if (authObj.session !== '') config.headers.Cookie = authObj.session
       config.headers.Authorization = authObj.type + ' ' + authObj.token_access
       return config
     },
@@ -28,7 +29,7 @@ function initEsAxios() {
         originalRequest._retry = true
         await esAuth.checkEsAuthExpiration()
         originalRequest.headers.Authorization = authObj.type + ' ' + authObj.token_access
-        return axios(originalRequest)
+        return esAxios(originalRequest)
       } else if (error.response.status === 401) {
         throw new ESAuthError('Invalid credentials')
       } else {
