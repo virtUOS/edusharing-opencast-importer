@@ -12,10 +12,10 @@ async function updateThumbnails(ocInstance, episodesData) {
   logger.Info('[ES API] Update episodes thumbnails for ' + ocInstance)
 
   return await returnReqsAsPromiseArray(episodesData)
-    .then(async (res) => {
+    .then(async res => {
       return episodesData
     })
-    .catch((error) => {
+    .catch(error => {
       if (error instanceof ESError) {
         throw error
       } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
@@ -39,7 +39,7 @@ async function updateThumbnails(ocInstance, episodesData) {
             formData,
             getHeadersUpdateThumbnail(formData),
             i
-          ).catch((error) => {
+          ).catch(error => {
             if (error instanceof ESPostError) {
               throw error
             } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
@@ -54,12 +54,12 @@ async function updateThumbnails(ocInstance, episodesData) {
   async function sendPostRequest(url, body, headers, index) {
     return await esAxios
       .post(url, body, headers)
-      .then((response) => {
+      .then(response => {
         if (response.status === 200) {
           return true
         }
       })
-      .catch((error) => {
+      .catch(error => {
         throw new ESPostError(error.message, error.code)
       })
   }
@@ -77,17 +77,21 @@ async function updateThumbnails(ocInstance, episodesData) {
 
   async function requestThumbnail(episode) {
     return await axios
-      .get(episode.previewPlayer, { responseType: 'stream' })
-      .then(async (response) => {
+      .get(getPreviewImageUrl(episode), { responseType: 'stream' })
+      .then(async response => {
         if (response && response.status === 200) {
           const formData = new FormData()
           formData.append('image', response.data)
           return formData
         }
       })
-      .catch((error) => {
+      .catch(error => {
         throw new ESError(error.message, error.code)
       })
+  }
+
+  function getPreviewImageUrl(episode) {
+    return episode.previewPlayer ? episode.previewPlayer : episode.previewSearch
   }
 
   function getHeadersUpdateThumbnail(formData) {

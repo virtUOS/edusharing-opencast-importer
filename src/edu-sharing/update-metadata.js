@@ -11,10 +11,10 @@ const vCardsJS = require('vcards-js')
 async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
   return await returnReqsAsPromiseArray(episodesData)
-    .then(async (res) => {
+    .then(async res => {
       return episodesData
     })
-    .catch((error) => {
+    .catch(error => {
       if (error instanceof ESError) {
         throw error
       } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
@@ -34,7 +34,7 @@ async function updateMetadata(ocInstance, episodesData) {
             getBodyUpdateMetadata(episodesData[i]),
             getHeadersUpdateMetadata(),
             i
-          ).catch((error) => {
+          ).catch(error => {
             if (error instanceof ESPostError) {
               throw error
             } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
@@ -49,12 +49,12 @@ async function updateMetadata(ocInstance, episodesData) {
   async function sendPostRequest(url, body, headers, index) {
     return await esAxios
       .post(url, body, headers)
-      .then((response) => {
+      .then(response => {
         if (response.status === 200) {
           return handleResponse(index)
         }
       })
-      .catch((error) => {
+      .catch(error => {
         throw new ESPostError(error.message, error.code)
       })
   }
@@ -71,7 +71,10 @@ async function updateMetadata(ocInstance, episodesData) {
   }
 
   function getBodyUpdateMetadata(episode) {
-    const licenseUpperUnderscore = episode.license.replace(/\s+/g, '-').toUpperCase()
+    const licenseUpperUnderscore = episode.license
+      .replace(/\s+/g, '_')
+      .replace(/-/g, '_')
+      .toUpperCase()
     const authorName = parseFullName(episode.creator)
 
     return JSON.stringify({
@@ -129,7 +132,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:inhaltstyp': ['Lektion'],
       'ccm:educationallearningresourcetype': ['https://w3id.org/kim/hcrt/video'],
       'cclom:interactivitytype': ['Vorlesung'],
-      'cclom:typicallearningtime': [episode.extent * 1000]
+      'cclom:typicallearningtime': [episode.extent]
     }).toString()
   }
 
