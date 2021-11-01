@@ -13,6 +13,7 @@
 > This importer harvests episodes and series (lecture recordings) from Opencast instances and pushes them as external references to an Edu-Sharing instance.
 
 ## Requirements
+* Edu-Sharing 6.0
 * NodeJS 10.12.0 or higher
 
 ## Install
