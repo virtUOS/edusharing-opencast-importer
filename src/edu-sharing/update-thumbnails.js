@@ -27,7 +27,7 @@ async function updateThumbnails(ocInstance, episodesData) {
     const requests = []
     for (let i = 0; i < episodesData.length; i++) {
       if (!episodesData[i].nodeId) continue
-      if (!episodesData[i].previewPlayer) continue
+      if (!getPreviewImageUrl(episodesData[i])) continue
 
       const formData = await requestThumbnail(episodesData[i])
       if (!formData) continue
