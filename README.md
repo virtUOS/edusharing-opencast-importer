@@ -67,8 +67,9 @@ config.es = {
   // Edu-Sharing http requests settings
   settings: {
     // Maximal number of http requests send to Edu-Sharing instance at once.
-    // Reduce value to reduce Edu-Sharing load.
-    maxPendingPromises: 5
+    // Reduce value to reduce Edu-Sharing load. 
+    // Increase carefully: In some cases Edu-Sharing was not able to process more than 2 requests parallel. 
+    maxPendingPromises: 2
   },
   // Edu-Sharing API routes
   routes: {
