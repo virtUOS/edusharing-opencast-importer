@@ -63,7 +63,11 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
 
     const episodes = await getAllPublishedEpisodes.start(ocEpisodes, forceUpdate, ocInstanceObj)
 
-    ocEpisodes = await filter.filterAllowedLicensedEpisodes(episodes, CONF.filter.allowedLicences)
+    ocEpisodes = await filter.filterAllowedLicensedEpisodes(
+      episodes,
+      CONF.filter.allowedLicences,
+      ocInstanceObj
+    )
     ocSeries = await getSeriesIdsFromEpisodes.start(
       ocEpisodes,
       ocSeries,

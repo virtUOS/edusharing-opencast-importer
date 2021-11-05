@@ -2,6 +2,7 @@
 
 const logger = require('node-file-logger')
 const CONF = require('../config/config.js')
+const MAPPING = require('../config/mapping.js')
 const { esAxios } = require('../services/es-axios')
 const pLimit = require('p-limit')
 const { ESError, ESPostError } = require('../models/errors')
@@ -90,6 +91,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'virtual:primaryparent_nodeid': [episode.parentId],
       'cm:createdISO8601': [episode.created],
       'cclom:general_description': [episode.description],
+      'cclom:general_language': [episode.language],
       'cm:edu_forcemetadataset': ['false'],
       'cm:modifier': ['opencast importer'],
       'cm:autoVersionOnUpdateProps': ['false'],
@@ -129,11 +131,20 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:version_comment': ['Automatischer Import von Opencast'],
       'cclom:general_keyword': ['Vorlesungsaufzeichnung', 'Opencast'],
       // twillo specific metadata
+      'ccm:taxonid': [mapSubject(episode.subject)],
       'ccm:inhaltstyp': ['Lektion'],
       'ccm:educationallearningresourcetype': ['https://w3id.org/kim/hcrt/video'],
       'cclom:interactivitytype': ['Vorlesung'],
+      'ccm:university': [episode.orgRor],
       'cclom:typicallearningtime': [episode.extent]
     }).toString()
+  }
+  
+  function mapSubject(ocSubject) {
+    if (ocSubject in MAPPING.subjects) {
+      return MAPPING.subjects[ocSubject]
+    }
+    return ''
   }
 
   function parseVCard(obj) {

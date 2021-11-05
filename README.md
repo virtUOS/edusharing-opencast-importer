@@ -1,6 +1,6 @@
 <h1 align="center">edusharing-opencast-importer</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.2.1-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.2.2-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/virtUOS/edusharing-opencast-importer/blob/main/LICENSE" target="_blank">
     <img alt="License: GPLv3" src="https://img.shields.io/badge/License-GPLv3-green.svg" />
   </a>
@@ -36,15 +36,17 @@ ES_USER=opencast
 ES_PASSWORD=opencast
 ```
 4. Rename `config.oc-instances.js.template` to `config.oc-instances.js` in folder `./src/config/`
-5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes.<br />
+5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes. Optionally, the ROR can be specified.<br />
 ```js
 {
   orgName: 'Opencast',
   orgUrl: 'https://opencast.org',
   protocol: 'https',
-  domain: 'develop.opencast.org'
+  domain: 'develop.opencast.org',
+  blacklistedIds: []
 }
 ```
+List Ids of oc-records you don't want to import into edu-sharing in blacklistedIds.
 
 ## Usage
 
@@ -67,8 +69,9 @@ config.es = {
   // Edu-Sharing http requests settings
   settings: {
     // Maximal number of http requests send to Edu-Sharing instance at once.
-    // Reduce value to reduce Edu-Sharing load.
-    maxPendingPromises: 5
+    // Reduce value to reduce Edu-Sharing load. 
+    // Increase carefully: In some cases Edu-Sharing was not able to process more than 2 requests parallel. 
+    maxPendingPromises: 2
   },
   // Edu-Sharing API routes
   routes: {
@@ -124,6 +127,10 @@ config.filter = {
   allowedLicences: ['CC0', 'CC-BY', 'CC-BY-SA', 'PD', 'PDM']
 }
 ```
+
+## Mapping
+
+Define mapping of opencast-values to edu-sharing-values in `src/config/mapping.js`.
 
 ## Import Workflow
 

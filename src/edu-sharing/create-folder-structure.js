@@ -253,7 +253,7 @@ async function createFolderForOcInstances(ocInstanceObj, seriesData) {
     return s
       .replace(/ /g, '-')
       .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[|(),.!?=:;/]/g, '')
+      .replace(/[|(),.!?=:;/"„“]/g, '')
       .toLowerCase()
       .substring(0, 50)
   }

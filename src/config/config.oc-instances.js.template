@@ -2,7 +2,9 @@ module.exports = [
   {
     orgName: 'Opencast',
     orgUrl: 'https://opencast.org',
+    // orgRor: '04qmmjx98',
     protocol: 'https',
-    domain: 'develop.opencast.org'
+    domain: 'develop.opencast.org',
+    blacklistedIds: []
   }
 ]
