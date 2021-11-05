@@ -15,5 +15,5 @@ test('remove not fitting objects from array', () => {
     { dcLicense: undefined }
   ]
 
-  expect(filter.filterAllowedLicensedEpisodes(episodes, allowedLicences).length).toBe(4)
+  expect(filter.filterAllowedLicensedEpisodes(episodes, allowedLicences, {}).length).toBe(4)
 })
