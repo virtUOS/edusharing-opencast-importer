@@ -126,6 +126,10 @@ config.filter = {
 }
 ```
 
+## Mapping
+
+Define mapping of opencast-values to edu-sharing-values in `src/config/mapping.js`.
+
 ## Import Workflow
 
 1. Get all published episodes from Opencast Instance
