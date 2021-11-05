@@ -6,7 +6,10 @@ function filterAllowedLicensedEpisodes(episodes, allowedLicences, ocInstanceObj)
   const episodesWithLicenseInfo = episodes.filter((episode) => episode.dcLicense)
 
   const episodesFiltered = episodesWithLicenseInfo.filter((episode) => {
-    if ('blacklistedIds' in ocInstanceObj && ocInstanceObj['blacklistedIds'].includes(episode.id.toString())) {
+    if (
+      'blacklistedIds' in ocInstanceObj &&
+      ocInstanceObj.blacklistedIds.includes(episode.id.toString())
+    ) {
       return false
     }
     for (let i = 0; i < allowedLicences.length; i++) {
