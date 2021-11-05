@@ -132,6 +132,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:inhaltstyp': ['Lektion'],
       'ccm:educationallearningresourcetype': ['https://w3id.org/kim/hcrt/video'],
       'cclom:interactivitytype': ['Vorlesung'],
+      'ccm:university': [episode.orgRor],
       'cclom:typicallearningtime': [episode.extent]
     }).toString()
   }

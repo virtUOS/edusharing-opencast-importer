@@ -36,7 +36,7 @@ ES_USER=opencast
 ES_PASSWORD=opencast
 ```
 4. Rename `config.oc-instances.js.template` to `config.oc-instances.js` in folder `./src/config/`
-5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes.<br />
+5. Edit `./src/config/config.oc-instances.js` and add Opencast instances as JSON objects (orgName, orgUrl, protocol, domain). Keys with org Prefix are nescessary for a minimal metadata set of Edu-Sharing nodes. Optionally, the ROR can be specified.<br />
 ```js
 {
   orgName: 'Opencast',

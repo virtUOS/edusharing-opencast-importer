@@ -162,6 +162,7 @@ function applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj) 
         episode.type = 'episode'
         episode.orgName = ocInstanceObj.orgName || ''
         episode.orgUrl = ocInstanceObj.orgUrl || ''
+        episode.orgRor = ocInstanceObj.orgRor || ''
         episode.extent = newOcEpisode.dcExtent || 0
         episode.title = newOcEpisode.dcTitle || ''
         episode.description = newOcEpisode.dcDescription || ''
