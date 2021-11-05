@@ -42,9 +42,11 @@ ES_PASSWORD=opencast
   orgName: 'Opencast',
   orgUrl: 'https://opencast.org',
   protocol: 'https',
-  domain: 'develop.opencast.org'
+  domain: 'develop.opencast.org',
+  blacklistedIds: []
 }
 ```
+List Ids of oc-records you don't want to import into edu-sharing in blacklistedIds.
 
 ## Usage
 
