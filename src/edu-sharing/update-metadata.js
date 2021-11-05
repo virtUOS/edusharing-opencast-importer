@@ -90,6 +90,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'virtual:primaryparent_nodeid': [episode.parentId],
       'cm:createdISO8601': [episode.created],
       'cclom:general_description': [episode.description],
+      'cclom:general_language': [episode.language],
       'cm:edu_forcemetadataset': ['false'],
       'cm:modifier': ['opencast importer'],
       'cm:autoVersionOnUpdateProps': ['false'],
