@@ -91,7 +91,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'virtual:primaryparent_nodeid': [episode.parentId],
       'cm:createdISO8601': [episode.created],
       'cclom:general_description': [episode.description],
-      'cclom:general_language': [episode.language],
+      'cclom:general_language': [mapLanguage(episode.language)],
       'cm:edu_forcemetadataset': ['false'],
       'cm:modifier': ['opencast importer'],
       'cm:autoVersionOnUpdateProps': ['false'],
@@ -140,6 +140,13 @@ async function updateMetadata(ocInstance, episodesData) {
     }).toString()
   }
   
+  function mapLanguage(ocLanguage) {
+    if (ocLanguage in MAPPING.language) {
+      return MAPPING.language[ocLanguage]
+    }
+    return ocLanguage
+  }
+
   function mapSubject(ocSubject) {
     if (ocSubject in MAPPING.subjects) {
       return MAPPING.subjects[ocSubject]
