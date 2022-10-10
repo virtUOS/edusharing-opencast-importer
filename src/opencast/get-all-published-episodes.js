@@ -33,9 +33,9 @@ async function start(ocEpisodes, force, ocInstanceObj) {
   function setInstanceMetadata(data) {
     if (!instanceMetadata.limit && !instanceMetadata.total) {
       instanceMetadata = {
-        limit: data.limit,
+        limit: CONF.oc.settings.requestOffset,
         total: data.total,
-        pageMax: Math.round(data.total / data.limit)
+        pageMax: Math.round(data.total / CONF.oc.settings.requestOffset)
       }
     }
   }
