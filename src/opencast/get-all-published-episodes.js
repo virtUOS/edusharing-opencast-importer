@@ -35,7 +35,7 @@ async function start(ocEpisodes, force, ocInstanceObj) {
       instanceMetadata = {
         limit: CONF.oc.settings.requestOffset,
         total: data.total,
-        pageMax: Math.round(data.total / CONF.oc.settings.requestOffset)
+        pageMax: Math.ceil(data.total / CONF.oc.settings.requestOffset)
       }
     }
   }
@@ -71,7 +71,7 @@ async function start(ocEpisodes, force, ocInstanceObj) {
     const requests = []
     const pageMax = instanceMetadata.pageMax ? instanceMetadata.pageMax : 1
 
-    for (let i = 0; i <= pageMax; i++) {
+    for (let i = 0; i < pageMax; i++) {
       requests.push(
         limit(() =>
           sendGetRequest(url, i * CONF.oc.settings.requestOffset)
