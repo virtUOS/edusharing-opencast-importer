@@ -13,9 +13,9 @@ async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
   return await returnReqsAsPromiseArray(episodesData)
     .then(async res => {
-      const failedUpdates = res.filter(r => r['status'] === 'rejected')
+      const failedUpdates = res.filter(r => r.status === 'rejected')
       for (let i = 0; i < failedUpdates.length; i++) {
-        logger.Warn(failedUpdates[i]['reason'])
+        logger.Warn(failedUpdates[i].reason.toString())
       }
       return episodesData
     })
@@ -40,7 +40,12 @@ async function updateMetadata(ocInstance, episodesData) {
             getHeadersUpdateMetadata(),
             i
           ).catch(error => {
-            throw new ESError('[ES API] Error while updating metadata (' + episodesData[i].nodeId + '): ' + error.message)
+            throw new ESError(
+              '[ES API] Error while updating metadata (' +
+                episodesData[i].nodeId +
+                '): ' +
+                error.message
+            )
           })
         )
       )
