@@ -12,10 +12,10 @@ const vCardsJS = require('vcards-js')
 async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
   return await returnReqsAsPromiseArray(episodesData)
-    .then(async res => {
+    .then(async (res) => {
       return episodesData
     })
-    .catch(error => {
+    .catch((error) => {
       if (error instanceof ESError) {
         throw error
       } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
@@ -35,7 +35,7 @@ async function updateMetadata(ocInstance, episodesData) {
             getBodyUpdateMetadata(episodesData[i]),
             getHeadersUpdateMetadata(),
             i
-          ).catch(error => {
+          ).catch((error) => {
             if (error instanceof ESPostError) {
               throw error
             } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
@@ -50,12 +50,12 @@ async function updateMetadata(ocInstance, episodesData) {
   async function sendPostRequest(url, body, headers, index) {
     return await esAxios
       .post(url, body, headers)
-      .then(response => {
+      .then((response) => {
         if (response.status === 200) {
           return handleResponse(index)
         }
       })
-      .catch(error => {
+      .catch((error) => {
         throw new ESPostError(error.message, error.code)
       })
   }
@@ -117,6 +117,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'ccm:metadatacontributer_creator': [
         parseVCard({
           firstName: 'Opencast',
+          lastName: 'Importer',
           url: 'https://github.com/virtUOS/edusharing-opencast-importer'
         })
       ],
@@ -139,7 +140,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'cclom:typicallearningtime': [episode.extent]
     }).toString()
   }
-  
+
   function mapLanguage(ocLanguage) {
     if (ocLanguage in MAPPING.language) {
       return MAPPING.language[ocLanguage]
@@ -157,13 +158,27 @@ async function updateMetadata(ocInstance, episodesData) {
   function parseVCard(obj) {
     const vCard = vCardsJS()
 
-    vCard.title = obj.title
-    vCard.firstName = obj.firstName
-    vCard.middleName = obj.middleName
-    vCard.lastName = obj.lastName
-    vCard.formattedName = obj.formattedName
-    vCard.organization = obj.organization
-    vCard.url = obj.url
+    if (obj.title) {
+      vCard.title = obj.title
+    }
+    if (obj.firstName) {
+      vCard.firstName = obj.firstName
+    }
+    if (obj.middleName) {
+      vCard.middleName = obj.middleName
+    }
+    if (obj.lastName) {
+      vCard.lastName = obj.lastName
+    }
+    if (obj.formattedName) {
+      vCard.formattedName = obj.formattedName
+    }
+    if (obj.organization) {
+      vCard.organization = obj.organization
+    }
+    if (obj.url) {
+      vCard.url = obj.url
+    }
     vCard.version = '3.0'
 
     return vCard.getFormattedString()
