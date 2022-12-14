@@ -12,14 +12,14 @@ const vCardsJS = require('vcards-js')
 async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
   return await returnReqsAsPromiseArray(episodesData)
-    .then(async res => {
-      const failedUpdates = res.filter(r => r.status === 'rejected')
+    .then(async (res) => {
+      const failedUpdates = res.filter((r) => r.status === 'rejected')
       for (let i = 0; i < failedUpdates.length; i++) {
         logger.Warn(failedUpdates[i].reason.toString())
       }
       return episodesData
     })
-    .catch(error => {
+    .catch((error) => {
       if (error instanceof ESError) {
         throw error
       } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
@@ -39,7 +39,7 @@ async function updateMetadata(ocInstance, episodesData) {
             getBodyUpdateMetadata(episodesData[i]),
             getHeadersUpdateMetadata(),
             i
-          ).catch(error => {
+          ).catch((error) => {
             throw new ESError(
               '[ES API] Error while updating metadata (' +
                 episodesData[i].nodeId +
@@ -57,12 +57,12 @@ async function updateMetadata(ocInstance, episodesData) {
   async function sendPostRequest(url, body, headers, index) {
     return await esAxios
       .post(url, body, headers)
-      .then(response => {
+      .then((response) => {
         if (response.status === 200) {
           return handleResponse(index)
         }
       })
-      .catch(error => {
+      .catch((error) => {
         throw new ESPostError(error.message, error.code)
       })
   }
@@ -76,6 +76,16 @@ async function updateMetadata(ocInstance, episodesData) {
       episode.nodeId +
       '/metadata?versionComment=METADATA_UPDATE'
     )
+  }
+
+  function personNameMapping(name) {
+    let mappedName = name
+    for (let i = 0; i < MAPPING.personName.length; i++) {
+      mappedName = mappedName
+        .replace(MAPPING.personName[i].regex, MAPPING.personName[i].replacement)
+        .trim()
+    }
+    return mappedName
   }
 
   function getBodyUpdateMetadata(episode) {
@@ -112,8 +122,8 @@ async function updateMetadata(ocInstance, episodesData) {
       'cm:modifier': ['opencast importer'],
       'cm:autoVersionOnUpdateProps': ['false'],
       'cclom:location': ['ccrep://repo/' + episode.nodeId],
-      'ccm:lifecyclecontributer_author': authors.map(authorName => {
-        const name = parseFullName(authorName)
+      'ccm:lifecyclecontributer_author': authors.map((authorName) => {
+        const name = parseFullName(personNameMapping(authorName))
         return parseVCard({
           title: name.title,
           firstName: name.first,
@@ -153,7 +163,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'cclom:typicallearningtime': [episode.extent]
     }).toString()
   }
-  
+
   function mapLanguage(ocLanguage) {
     if (ocLanguage in MAPPING.language) {
       return MAPPING.language[ocLanguage]
