@@ -1,6 +1,6 @@
 <h1 align="center">edusharing-opencast-importer</h1>
 <p>
-  <img alt="Version" src="https://img.shields.io/badge/version-0.2.2-blue.svg?cacheSeconds=2592000" />
+  <img alt="Version" src="https://img.shields.io/badge/version-0.2.3-blue.svg?cacheSeconds=2592000" />
   <a href="https://github.com/virtUOS/edusharing-opencast-importer/blob/main/LICENSE" target="_blank">
     <img alt="License: GPLv3" src="https://img.shields.io/badge/License-GPLv3-green.svg" />
   </a>
