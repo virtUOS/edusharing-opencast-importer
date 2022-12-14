@@ -8,11 +8,15 @@ const pLimit = require('p-limit')
 const FormData = require('form-data')
 const { ESError, ESPostError } = require('../models/errors')
 
-async function updateThumbnails(ocInstance, episodesData) {
+async function updateThumbnails(ocInstance, episodesData, ocInstanceObj) {
   logger.Info('[ES API] Update episodes thumbnails for ' + ocInstance)
 
   return await returnReqsAsPromiseArray(episodesData)
     .then(async res => {
+      const failedUpdates = res.filter(r => r.status === 'rejected')
+      for (let i = 0; i < failedUpdates.length; i++) {
+        logger.Warn(failedUpdates[i].reason.toString())
+      }
       return episodesData
     })
     .catch(error => {
@@ -40,9 +44,12 @@ async function updateThumbnails(ocInstance, episodesData) {
             getHeadersUpdateThumbnail(formData),
             i
           ).catch(error => {
-            if (error instanceof ESPostError) {
-              throw error
-            } else throw new ESError('[ES API] Error while updating thumbnails: ' + error.message)
+            throw new ESError(
+              '[ES API] Error while updating thumbnail (' +
+                episodesData[i].nodeId +
+                '): ' +
+                error.message
+            )
           })
         )
       )
@@ -91,7 +98,11 @@ async function updateThumbnails(ocInstance, episodesData) {
   }
 
   function getPreviewImageUrl(episode) {
-    return episode.previewPlayer ? episode.previewPlayer : episode.previewSearch
+    const imageUrl = episode.previewPlayer ? episode.previewPlayer : episode.previewSearch
+    if (!imageUrl && ocInstanceObj.defaultThumbnailUrl) {
+      return ocInstanceObj.defaultThumbnailUrl
+    }
+    return imageUrl
   }
 
   function getHeadersUpdateThumbnail(formData) {

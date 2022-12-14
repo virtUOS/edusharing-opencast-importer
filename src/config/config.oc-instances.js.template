@@ -4,6 +4,7 @@ module.exports = [
     orgUrl: 'https://opencast.org',
     // orgRor: '04qmmjx98',
     protocol: 'https',
+    defaultThumbnailUrl: '',
     domain: 'develop.opencast.org',
     blacklistedIds: [],
     useSeriesDescriptionInEpisodes: false
