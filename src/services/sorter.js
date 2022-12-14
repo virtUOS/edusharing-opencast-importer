@@ -126,7 +126,13 @@ function setMetadataDates(data) {
 function getEpisodesDataObject(seriesData, ocEpisodes, episodesData, ocInstanceObj) {
   const uniqueEpisodeIds = getUniqueEpisodeIds(ocEpisodes)
   const episodeObjs = createObjectsFromEpisodeIds(uniqueEpisodeIds)
-  const episodes = applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj, seriesData)
+  const episodes = applyEpisodeData(
+    episodeObjs,
+    ocEpisodes,
+    episodesData,
+    ocInstanceObj,
+    seriesData
+  )
   return updateMetadata(episodes)
 }
 
@@ -195,31 +201,38 @@ function applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj, 
           .replace(/[(),!?=:;/"„“]/g, '')
           .toLowerCase()
           .substring(0, 40)}`
-        
+
         prepareEpisode(episode, seriesData, ocInstanceObj)
       }
 
       return episode
     }
   })
-  
+
   function appendStringIfNotContained(baseString, additionalString, separator) {
     if (!additionalString) {
       return baseString
     } else if (!baseString) {
       return additionalString
-    } else if (baseString.indexOf(additionalString) !== -1) { // already contained
+    } else if (baseString.indexOf(additionalString) !== -1) {
+      // already contained
       return baseString
     }
     return baseString + separator + additionalString
   }
 
   function prepareEpisode(episode, seriesData, ocInstanceObj) {
-    const seriesIndex = seriesData.findIndex((series) => 'episodes' in series && series.episodes.includes(episode.id))
+    const seriesIndex = seriesData.findIndex(
+      (series) => 'episodes' in series && series.episodes.includes(episode.id)
+    )
     if (seriesIndex >= 0) {
       const series = seriesData[seriesIndex]
       if (ocInstanceObj.useSeriesDescriptionInEpisodes) {
-        episode.description = appendStringIfNotContained(episode.description, series.description, "\n\n")
+        episode.description = appendStringIfNotContained(
+          episode.description,
+          series.description,
+          '\n\n'
+        )
       }
     }
   }
