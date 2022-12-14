@@ -13,6 +13,10 @@ async function updateMetadata(ocInstance, episodesData) {
   logger.Info('[ES API] Update metadata per episode for ' + ocInstance)
   return await returnReqsAsPromiseArray(episodesData)
     .then(async (res) => {
+      const failedUpdates = res.filter((r) => r.status === 'rejected')
+      for (let i = 0; i < failedUpdates.length; i++) {
+        logger.Warn(failedUpdates[i].reason.toString())
+      }
       return episodesData
     })
     .catch((error) => {
@@ -36,9 +40,12 @@ async function updateMetadata(ocInstance, episodesData) {
             getHeadersUpdateMetadata(),
             i
           ).catch((error) => {
-            if (error instanceof ESPostError) {
-              throw error
-            } else throw new ESError('[ES API] Error while updating metadata: ' + error.message)
+            throw new ESError(
+              '[ES API] Error while updating metadata (' +
+                episodesData[i].nodeId +
+                '): ' +
+                error.message
+            )
           })
         )
       )
@@ -71,12 +78,31 @@ async function updateMetadata(ocInstance, episodesData) {
     )
   }
 
+  function personNameMapping(name) {
+    let mappedName = name
+    for (let i = 0; i < MAPPING.personName.length; i++) {
+      mappedName = mappedName
+        .replace(MAPPING.personName[i].regex, MAPPING.personName[i].replacement)
+        .trim()
+    }
+    return mappedName
+  }
+
   function getBodyUpdateMetadata(episode) {
     const licenseUpperUnderscore = episode.license
       .replace(/\s+/g, '_')
       .replace(/-/g, '_')
       .toUpperCase()
-    const authorName = parseFullName(episode.creator)
+    let authors = []
+    if (episode.creators) {
+      if (Array.isArray(episode.creators)) {
+        authors = episode.creators
+      } else {
+        authors = [episode.creators]
+      }
+    } else if (episode.creator) {
+      authors = [episode.creator]
+    }
 
     return JSON.stringify({
       'cm:name': [episode.filename],
@@ -96,18 +122,16 @@ async function updateMetadata(ocInstance, episodesData) {
       'cm:modifier': ['opencast importer'],
       'cm:autoVersionOnUpdateProps': ['false'],
       'cclom:location': ['ccrep://repo/' + episode.nodeId],
-      'ccm:author_freetext': [
-        Array.isArray(episode.creators) ? episode.creators.join('; ') : episode.creators
-      ],
-      'ccm:lifecyclecontributer_author': [
-        parseVCard({
-          title: authorName.title,
-          firstName: authorName.first,
-          middleName: authorName.middle,
-          lastName: authorName.last,
-          formattedName: authorName.formattedName
+      'ccm:lifecyclecontributer_author': authors.map((authorName) => {
+        const name = parseFullName(personNameMapping(authorName))
+        return parseVCard({
+          title: name.title,
+          firstName: name.first,
+          middleName: name.middle,
+          lastName: name.last,
+          formattedName: name.formattedName
         })
-      ],
+      }),
       'ccm:lifecyclecontributer_publisher': [
         parseVCard({
           organization: episode.organization,

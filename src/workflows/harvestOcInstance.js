@@ -82,7 +82,12 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
       ocInstanceObj
     )
 
-    episodesData = await sorter.getEpisodesDataObject(ocEpisodes, episodesData, ocInstanceObj)
+    episodesData = await sorter.getEpisodesDataObject(
+      seriesData,
+      ocEpisodes,
+      episodesData,
+      ocInstanceObj
+    )
     storeData()
 
     await esAuth.initEsAuth()
@@ -97,7 +102,11 @@ async function harvestOcInstance(ocInstanceObj, forceUpdate) {
     episodesData = await esMetadata.updateMetadata(ocInstance, episodesData)
     storeData()
 
-    episodesData = await esUpdateThumbnails.updateThumbnails(ocInstance, episodesData)
+    episodesData = await esUpdateThumbnails.updateThumbnails(
+      ocInstance,
+      episodesData,
+      ocInstanceObj
+    )
 
     await esPermissions.updatePermissions(ocInstance, episodesData)
 
