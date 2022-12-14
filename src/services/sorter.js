@@ -192,7 +192,7 @@ function applyEpisodeData(episodeObjs, ocEpisodes, episodesData, ocInstanceObj) 
         episode.filename = `${episode.id}-${episode.title
           .replace(/\s+/g, '-')
           .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[(),!?=:;/"„“]/g, '')
+          .replace(/[(),!?=:;./"„“]/g, '')
           .toLowerCase()
           .substring(0, 40)}`
       }
