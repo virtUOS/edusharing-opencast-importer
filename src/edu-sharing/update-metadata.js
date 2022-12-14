@@ -77,6 +77,14 @@ async function updateMetadata(ocInstance, episodesData) {
       '/metadata?versionComment=METADATA_UPDATE'
     )
   }
+  
+  function personNameMapping(name) {
+    let mappedName = name
+    for (let i = 0; i < MAPPING.personName.length; i++) {
+      mappedName = mappedName.replace(MAPPING.personName[i].regex, MAPPING.personName[i].replacement).trim()
+    }
+    return mappedName
+  }
 
   function getBodyUpdateMetadata(episode) {
     const licenseUpperUnderscore = episode.license
@@ -113,7 +121,7 @@ async function updateMetadata(ocInstance, episodesData) {
       'cm:autoVersionOnUpdateProps': ['false'],
       'cclom:location': ['ccrep://repo/' + episode.nodeId],
       'ccm:lifecyclecontributer_author': authors.map(authorName => {
-        const name = parseFullName(authorName)
+        const name = parseFullName(personNameMapping(authorName))
         return parseVCard({
           title: name.title,
           firstName: name.first,
